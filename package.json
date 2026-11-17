@@ -7,8 +7,8 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "postinstall": "electron-rebuild -f -w node-pty",
-    "test": "node test/state.test.js && node test/hooks.test.js"
+    "test": "node test/state.test.js && node test/hooks.test.js",
+    "rebuild": "electron-rebuild -f -w node-pty"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
