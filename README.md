@@ -6,7 +6,7 @@ An agent-native terminal for Claude Code. Every tab is an agent session, optiona
 
 ```bash
 cd ~/Workshop/switchboard
-npm install      # also rebuilds node-pty for Electron (needs Xcode Command Line Tools)
+npm install      # node-pty ships a macOS prebuild; no compiler needed
 npm start
 ```
 
