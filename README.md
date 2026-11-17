@@ -1,0 +1,54 @@
+# Switchboard (working name)
+
+An agent-native terminal for Claude Code. Every tab is an agent session, optionally in its own git worktree, and the app always knows what each agent is doing.
+
+## Run it
+
+```bash
+cd ~/Workshop/switchboard
+npm install      # also rebuilds node-pty for Electron (needs Xcode Command Line Tools)
+npm start
+```
+
+You need `claude` on your PATH. To use a different binary, run `SWITCHBOARD_CLAUDE=/path/to/claude npm start`.
+
+## What v0.1 does
+
+- **Agent sessions.** Each one runs `claude` in a real terminal (xterm.js and node-pty). When Claude exits, the tab drops to a normal shell.
+- **Worktree per agent.** Tick the box and the session gets its own worktree at `<repo>.worktrees/<name>` on branch `sb/<name>`.
+- **Live status.** Claude Code hooks report every event to the app over localhost: working, needs you, your turn, error. Your own `~/.claude` settings are left untouched; the hooks are passed in with `--settings` for each session.
+- **⌘J** jumps to the next agent waiting on you. A dock badge counts agents that need you, and you get a macOS notification when one needs you while the app isn't focused.
+- **Mission Control (⌘0):** every agent as a card, plus a **collision warning** when two agents edit the same file.
+- **Safety border.** The window frame turns teal, amber or red with the active session's permission mode.
+- **Inspector.** Shows the context-window gauge (read from the session transcript), tool and subagent counts, files read and written, and Claude's last reply.
+- **Timeline strip.** Every tool call appears as a colour-coded tick.
+- **Spoken alerts** (speaker button). For now this uses macOS `say` with a different voice per agent. Kokoro is the planned engine.
+
+## Shortcuts
+
+| Key | Action |
+| --- | --- |
+| ⌘T | New agent session (⌘↵ in the prompt box starts it) |
+| ⌘J | Next agent that needs you |
+| ⌘0 | Mission Control |
+| ⌘1–9 | Switch session |
+| ⌘I | Toggle inspector |
+| ⌘W | Close session |
+| ⌘= / ⌘- | Text size |
+
+## Layout
+
+```
+main.js            Electron main: PTYs, hook server, notifications, voice, menu
+preload.js         The only bridge between the UI and main
+src/state.js       Hook events → session model (pure, unit-tested)
+src/hooks.js       Localhost hook server + per-session --settings file
+src/git.js         Repo detection and worktrees
+src/transcript.js  Context gauge from the transcript JSONL
+renderer/          UI (plain HTML/CSS/JS, no build step)
+test/              npm test, plus a headless screenshot smoke test
+```
+
+## Not built yet
+
+Rewind/fork from the timeline, best-of-N compare, a permission inbox you can answer from inside the app, inline diff review, Kokoro voice with spoken commands, and restoring sessions after a restart.

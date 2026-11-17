@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' data: file:; font-src 'self' file: data:">
+<title>Switchboard</title>
+<link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app" class="safety-default">
+
+  <header id="titlebar">
+    <div class="brand">Switchboard</div>
+    <div id="crumb" class="crumb"></div>
+    <div class="spacer"></div>
+    <div id="safety" class="safety-pill" hidden></div>
+    <button id="btn-voice" class="icon-btn" title="Spoken alerts (off)" aria-label="Toggle spoken alerts" aria-pressed="false">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    </button>
+    <button id="btn-mission" class="ghost-btn" title="Mission Control (⌘0)">Mission Control <kbd>⌘0</kbd></button>
+    <button id="btn-next" class="next-btn" title="Jump to the next agent that needs you (⌘J)"><span id="next-count">0</span>&nbsp;waiting <kbd>⌘J</kbd></button>
+  </header>
+
+  <div id="timeline" aria-label="Session timeline">
+    <div class="tl-label">Timeline</div>
+    <div id="tl-track" class="tl-track"></div>
+    <div class="tl-legend">
+      <span><i class="k-read"></i>read</span>
+      <span><i class="k-edit"></i>edit</span>
+      <span><i class="k-shell"></i>shell</span>
+      <span><i class="k-agent"></i>subagent</span>
+      <span><i class="k-ask"></i>asked you</span>
+    </div>
+  </div>
+
+  <div id="body">
+    <nav id="sidebar" aria-label="Agent sessions">
+      <div class="side-head"><span>Sessions</span><span class="muted mono" id="side-count">0</span></div>
+      <div id="session-list"></div>
+      <button id="btn-new" class="new-btn">+ New agent <kbd>⌘T</kbd></button>
+    </nav>
+
+    <main id="stage">
+      <div id="terminals"></div>
+      <div id="empty" class="empty">
+        <div class="empty-inner">
+          <div class="empty-title">Start your first agent</div>
+          <p>Each session runs Claude Code in its own terminal — optionally in its own git worktree — and reports what it’s doing here.</p>
+          <button id="btn-new-empty" class="primary-btn">New agent session <kbd>⌘T</kbd></button>
+        </div>
+      </div>
+      <div id="mission" hidden>
+        <div id="collisions-banner"></div>
+        <div id="mission-grid"></div>
+      </div>
+    </main>
+
+    <aside id="inspector" aria-label="Session inspector"></aside>
+  </div>
+
+  <dialog id="new-dialog">
+    <form id="new-form" method="dialog">
+      <h2>New agent session</h2>
+      <label class="field">
+        <span>Folder</span>
+        <div class="row">
+          <input id="f-cwd" type="text" placeholder="/Users/you/project" required spellcheck="false">
+          <button type="button" id="f-pick" class="ghost-btn">Choose…</button>
+        </div>
+        <div id="f-recent" class="recent"></div>
+      </label>
+      <label class="field">
+        <span>Name</span>
+        <input id="f-name" type="text" placeholder="auth-refactor" required spellcheck="false">
+      </label>
+      <label class="field">
+        <span>First prompt <em>(optional)</em></span>
+        <textarea id="f-prompt" rows="3" placeholder="What should this agent do?"></textarea>
+      </label>
+      <div class="row two">
+        <label class="check">
+          <input id="f-worktree" type="checkbox">
+          <span>Run in its own git worktree <em id="f-repo-note"></em></span>
+        </label>
+        <label class="field inline">
+          <span>Permissions</span>
+          <select id="f-mode">
+            <option value="default">Ask before acting</option>
+            <option value="plan">Plan first (read-only)</option>
+            <option value="acceptEdits">Auto-accept edits</option>
+            <option value="bypassPermissions">Bypass all prompts ⚠</option>
+          </select>
+        </label>
+      </div>
+      <div id="f-error" class="form-error" hidden></div>
+      <div class="actions">
+        <button type="button" id="f-cancel" class="ghost-btn">Cancel</button>
+        <button type="submit" id="f-start" class="primary-btn">Start agent ↵</button>
+      </div>
+    </form>
+  </dialog>
+</div>
+
+<script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="../node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
