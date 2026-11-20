@@ -406,8 +406,9 @@ async function collectBuffers(w) {
 }
 
 let saving = null;
+let startedUp = false;  // never save before restore finished: a copy killed mid-startup must not wipe your sessions
 async function saveState() {
-  if (!PERSIST) return;
+  if (!PERSIST || !startedUp) return;
   if (saving) return saving;
   saving = (async () => {
     const out = { version: 1, savedAt: Date.now(), windows: [] };
@@ -609,7 +610,8 @@ function buildMenu() {
         { label: 'Jump to Next Waiting Agent', accelerator: 'CmdOrCtrl+J', click: menuSend('next') },
         { label: 'Toggle Mission Control', accelerator: 'CmdOrCtrl+0', click: menuSend('mission') },
         { label: 'Toggle Inspector', accelerator: 'CmdOrCtrl+I', click: menuSend('inspector') },
-        { label: 'Rename Session…', click: menuSend('rename') },
+        { label: 'Search All Terminals…', accelerator: 'CmdOrCtrl+P', click: menuSend('palette') },
+        { label: 'Rename Session…', accelerator: 'CmdOrCtrl+Shift+E', click: menuSend('rename') },
         { type: 'separator' },
         ...sessionItems,
         { type: 'separator' },
@@ -693,6 +695,7 @@ app.whenReady().then(async () => {
   buildMenu();
   const restored = await restoreState();
   if (!restored) createWindow();
+  startedUp = true;
   if (process.env.SB_SMOKE) require('./test/smoke-electron')({ app, win, createAgentSession, handleHook, send });
   setInterval(pollTerminals, 1500);
   if (PERSIST) setInterval(saveState, 20000);

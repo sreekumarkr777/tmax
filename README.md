@@ -34,7 +34,9 @@ You need `claude` on your PATH. To use a different binary, run `SWITCHBOARD_CLAU
 | ⌘⇧N | New plain shell |
 | ⌘N | New window |
 | ⌘D / ⌘⇧D | Split right (new shell) / close split |
+| ⌘P | Search every terminal: session names, folders, commands and all output |
 | ⌘F, ⌘G, ⌘⇧G | Find in terminal, next, previous |
+| ⌘⇧E | Rename the current session (or double-click it, or the pencil icon) |
 | ⌘K | Clear the terminal |
 | ⌘J | Next agent that needs you |
 | ⌘0 | Mission Control |

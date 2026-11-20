@@ -415,10 +415,10 @@
       else if (s.attention === 'bell') badge = '<span class="badge waiting">bell</span>';
       else badge = `<span class="s-num">⌘${i + 1}</span>`;
       const cls = [s.id === state.activeId && state.view === 'session' ? 'active' : '', shown.includes(s.id) && state.split ? 'in-split' : ''].join(' ');
-      return `<button class="s-item ${cls}" data-id="${s.id}" title="${esc(home(s.cwdNow || s.cwd))} · double-click to rename">
-        <div class="s-top"><span class="dot ${plain ? 'shell' : s.status}${plain && s.command ? ' busy' : ''}"></span><span class="s-name">${esc(s.name)}</span>${badge}</div>
+      return `<div class="s-item ${cls}" data-id="${s.id}" role="button" tabindex="0" title="${esc(home(s.cwdNow || s.cwd))} · double-click to rename">
+        <div class="s-top"><span class="dot ${plain ? 'shell' : s.status}${plain && s.command ? ' busy' : ''}"></span><span class="s-name">${esc(s.name)}</span>${badge}<button class="s-edit" data-rename="${s.id}" title="Rename (⌘⇧E)" aria-label="Rename ${esc(s.name)}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
         ${!plain && s.branch ? `<div class="s-branch">⎇ ${esc(s.branch)}</div>` : ''}
-        <div class="s-act">${esc(subtitle(s))}</div></button>`;
+        <div class="s-act">${esc(subtitle(s))}</div></div>`;
     }).join('');
 
     // stage
@@ -648,7 +648,14 @@
 
   // ---------- events ----------
   $('#session-list').addEventListener('click', (e) => {
+    const r = e.target.closest('[data-rename]');
+    if (r) { e.stopPropagation(); renameSession(r.dataset.rename); return; }
+    if (e.target.closest('.rename-input')) return;
     const b = e.target.closest('.s-item'); if (b) select(b.dataset.id);
+  });
+  $('#session-list').addEventListener('keydown', (e) => {
+    const b = e.target.closest('.s-item');
+    if (b && e.target === b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(b.dataset.id); }
   });
   $('#session-list').addEventListener('dblclick', (e) => {
     const b = e.target.closest('.s-item'); if (b) renameSession(b.dataset.id);
@@ -701,7 +708,7 @@
     sb.setSettings({ fontSize: size });
   }
 
-  const dialogOpen = () => $('#new-dialog').open || $('#settings-dialog').open;
+  const dialogOpen = () => $('#new-dialog').open || $('#settings-dialog').open || $('#palette').open;
 
   sb.onMenu((action, arg) => {
     if (action === 'settings') { openSettings(); return; }
@@ -718,12 +725,141 @@
     else if (action === 'select') { const id = state.order[arg]; if (id) select(id); }
     else if (action === 'close') { if (state.activeId) closeSession(state.activeId); }
     else if (action === 'rename') { if (state.activeId) renameSession(state.activeId); }
+    else if (action === 'palette') openPalette();
     else if (action === 'font') setFont(arg);
     else if (action === 'find') openFind();
     else if (action === 'find-next') { if (findbar.hidden) openFind(); else doFind(true); }
     else if (action === 'find-prev') { if (findbar.hidden) openFind(); else doFind(false); }
     else if (action === 'clear') clearBuffer();
   });
+
+  // ---------- search all terminals (⌘P) ----------
+  const pal = $('#palette');
+  const palQ = $('#pal-q');
+  let palItems = [];
+  let palSel = 0;
+
+  function openPalette() {
+    if (pal.open) { palQ.select(); return; }
+    palQ.value = '';
+    pal.showModal();
+    palQ.focus();
+    runPalette();
+  }
+  function closePalette(refocus = true) {
+    if (pal.open) pal.close();
+    if (refocus) { const t = state.terms.get(state.activeId); if (t) t.term.focus(); }
+  }
+
+  // every line of a terminal's buffer (newest last), wrapped lines joined
+  function bufferLines(term, max = 8000) {
+    const buf = term.buffer.active;
+    const out = [];
+    const start = Math.max(0, buf.length - max);
+    let cur = null;
+    for (let y = start; y < buf.length; y++) {
+      const line = buf.getLine(y);
+      if (!line) continue;
+      const text = line.translateToString(true);
+      if (line.isWrapped && cur) cur.text += text;
+      else { cur = { y, text }; out.push(cur); }
+    }
+    return out;
+  }
+
+  function hl(text, q) {
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+
+  function runPalette() {
+    const q = palQ.value.trim();
+    const ql = q.toLowerCase();
+    const items = [];
+    for (const id of state.order) {
+      const s = state.sessions.get(id);
+      if (!s) continue;
+      const where = home(s.cwdNow || s.cwd);
+      const meta = [where, s.branch, s.command].filter(Boolean).join(' · ');
+      const hay = `${s.name} ${meta} ${s.activity || ''}`.toLowerCase();
+      if (!q || hay.includes(ql)) items.push({ kind: 'session', id, title: s.name, sub: meta || s.activity || '', score: s.name.toLowerCase().startsWith(ql) ? 0 : 1 });
+    }
+    items.sort((a, b) => a.score - b.score);
+    if (q.length >= 2) {
+      let total = 0;
+      for (const id of state.order) {
+        const t = state.terms.get(id);
+        const s = state.sessions.get(id);
+        if (!t || !s) continue;
+        const lines = bufferLines(t.term);
+        let n = 0;
+        for (let i = lines.length - 1; i >= 0 && n < 6 && total < 60; i--) {
+          const L = lines[i];
+          const idx = L.text.toLowerCase().indexOf(ql);
+          if (idx < 0) continue;
+          // keep the match visible: trim long lines around it
+          const from = Math.max(0, idx - 40);
+          const snippet = (from ? '…' : '') + L.text.slice(from, from + 140).trim();
+          items.push({ kind: 'line', id, y: L.y, title: snippet, sub: s.name, q });
+          n++; total++;
+        }
+      }
+    }
+    palItems = items;
+    palSel = 0;
+    drawPalette(q);
+  }
+
+  function drawPalette(q) {
+    const list = $('#pal-list');
+    if (!palItems.length) {
+      list.innerHTML = `<div class="pal-empty">${q ? 'Nothing matches “' + esc(q) + '”' : 'No sessions yet'}</div>`;
+      return;
+    }
+    let lastKind = null;
+    list.innerHTML = palItems.map((it, i) => {
+      const head = it.kind !== lastKind ? `<div class="pal-head">${it.kind === 'session' ? 'Sessions' : 'In terminal output'}</div>` : '';
+      lastKind = it.kind;
+      const s = state.sessions.get(it.id);
+      const icon = it.kind === 'session' ? `<span class="dot ${isPlain(s) ? 'shell' : s.status}"></span>` : '<span class="pal-line">›</span>';
+      const title = it.kind === 'line' ? `<span class="mono">${hl(it.title, it.q)}</span>` : hl(it.title, q || '');
+      return `${head}<div class="pal-item ${i === palSel ? 'sel' : ''}" data-i="${i}" role="option" aria-selected="${i === palSel}">
+        ${icon}<div class="pal-text"><div class="pal-title">${title}</div><div class="pal-sub">${esc(it.sub)}</div></div></div>`;
+    }).join('');
+    const sel = list.querySelector('.pal-item.sel');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function choosePalette(i) {
+    const it = palItems[i];
+    if (!it) return;
+    closePalette(false);
+    select(it.id);
+    if (it.kind === 'line') {
+      const t = state.terms.get(it.id);
+      setTimeout(() => {
+        openFind();
+        findQ.value = it.q;
+        // start the search at this exact line so that match is the highlighted one
+        t.term.select(0, it.y, 0);
+        doFind(true);
+        t.term.scrollToLine(Math.max(0, it.y - Math.floor(t.term.rows / 2)));
+      }, 0);
+    }
+  }
+
+  palQ.addEventListener('input', runPalette);
+  palQ.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); palSel = Math.min(palItems.length - 1, palSel + 1); drawPalette(palQ.value.trim()); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); palSel = Math.max(0, palSel - 1); drawPalette(palQ.value.trim()); }
+    else if (e.key === 'Enter') { e.preventDefault(); choosePalette(palSel); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  });
+  $('#pal-list').addEventListener('click', (e) => { const it = e.target.closest('.pal-item'); if (it) choosePalette(Number(it.dataset.i)); });
+  pal.addEventListener('click', (e) => { if (e.target === pal) closePalette(); });
+  pal.addEventListener('cancel', (e) => { e.preventDefault(); closePalette(); });
+  $('#btn-search').addEventListener('click', openPalette);
 
   // ---------- settings ----------
   const sdlg = $('#settings-dialog');
@@ -923,7 +1059,10 @@
   window.__sbSplit = splitRight;
   window.__sbFind = (q) => { openFind(); findQ.value = q; doFind(true); return $('#find-count').textContent; };
   window.__sbSettings = openSettings;
+  window.__sbPalette = (q) => { openPalette(); palQ.value = q; runPalette(); return palItems.map((i) => ({ kind: i.kind, title: i.title, sub: i.sub })); };
+  window.__sbPaletteChoose = (i) => choosePalette(i);
   window.__sbSerialize = serializeAll;
+  window.__sbText = (id) => { const t = state.terms.get(id); return t ? bufferLines(t.term, 400).map((l) => l.text).join('\n') : ''; };
   window.__sbState = () => ({ order: state.order, activeId: state.activeId, split: state.split, view: state.view });
   window.__sbCtx = (map) => { for (const [id, used] of Object.entries(map)) { const s = state.sessions.get(id); if (s) s.context = { used }; } renderAll(); };
 
