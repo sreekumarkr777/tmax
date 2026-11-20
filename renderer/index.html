@@ -18,6 +18,9 @@
     <button id="btn-voice" class="icon-btn" title="Spoken alerts (off)" aria-label="Toggle spoken alerts" aria-pressed="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
     </button>
+    <button id="btn-settings" class="icon-btn" title="Settings (⌘,)" aria-label="Settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
     <button id="btn-mission" class="ghost-btn" title="Mission Control (⌘0)">Mission Control <kbd>⌘0</kbd></button>
     <button id="btn-next" class="next-btn" title="Jump to the next agent that needs you (⌘J)"><span id="next-count">0</span>&nbsp;waiting <kbd>⌘J</kbd></button>
   </header>
@@ -26,28 +29,44 @@
     <div class="tl-label">Timeline</div>
     <div id="tl-track" class="tl-track"></div>
     <div class="tl-legend">
+      <span title="You sent a prompt"><i class="k-user"></i>you</span>
       <span><i class="k-read"></i>read</span>
       <span><i class="k-edit"></i>edit</span>
-      <span><i class="k-shell"></i>shell</span>
+      <span title="Shell command (Claude's, or one you ran in a shell tab)"><i class="k-shell"></i>shell</span>
       <span><i class="k-agent"></i>subagent</span>
       <span><i class="k-ask"></i>asked you</span>
+      <span title="A tool call failed"><i class="k-fail"></i>failed</span>
+      <span title="Claude finished its turn"><i class="k-stop"></i>done</span>
     </div>
   </div>
 
   <div id="body">
-    <nav id="sidebar" aria-label="Agent sessions">
+    <nav id="sidebar" aria-label="Sessions">
       <div class="side-head"><span>Sessions</span><span class="muted mono" id="side-count">0</span></div>
       <div id="session-list"></div>
-      <button id="btn-new" class="new-btn">+ New agent <kbd>⌘T</kbd></button>
+      <button id="btn-new" class="new-btn" title="Start an agent in the current folder · ⇧-click or ⌘⇧T for options">+ New agent <kbd>⌘T</kbd></button>
+      <div class="new-row">
+        <button id="btn-shell" class="new-btn" title="A plain terminal in the current folder">New shell <kbd>⌘⇧N</kbd></button>
+        <button id="btn-open" class="new-btn" title="Pick any folder and start an agent there (or drop a folder on the window)">Open… <kbd>⌘O</kbd></button>
+      </div>
     </nav>
 
     <main id="stage">
       <div id="terminals"></div>
+      <div id="findbar" class="findbar" hidden>
+        <input id="find-q" type="text" placeholder="Find" spellcheck="false" aria-label="Find in terminal">
+        <span id="find-count" class="find-count"></span>
+        <button type="button" class="find-btn" id="find-case" title="Match case" aria-pressed="false">Aa</button>
+        <button type="button" class="find-btn" id="find-prev" title="Previous (⇧↵)" aria-label="Previous match">↑</button>
+        <button type="button" class="find-btn" id="find-next" title="Next (↵)" aria-label="Next match">↓</button>
+        <button type="button" class="find-btn" id="find-close" title="Close (Esc)" aria-label="Close find">✕</button>
+      </div>
       <div id="empty" class="empty">
         <div class="empty-inner">
           <div class="empty-title">Start your first agent</div>
           <p>Each session runs Claude Code in its own terminal — optionally in its own git worktree — and reports what it’s doing here.</p>
           <button id="btn-new-empty" class="primary-btn">New agent session <kbd>⌘T</kbd></button>
+          <p class="hint">Starts in your last folder · ⌘O or drop a folder here to pick another · ⌘⇧N for a plain shell · ⌘⇧T for options</p>
         </div>
       </div>
       <div id="mission" hidden>
@@ -65,14 +84,14 @@
       <label class="field">
         <span>Folder</span>
         <div class="row">
-          <input id="f-cwd" type="text" placeholder="/Users/you/project" required spellcheck="false">
+          <input id="f-cwd" type="text" placeholder="/Users/you/project" spellcheck="false">
           <button type="button" id="f-pick" class="ghost-btn">Choose…</button>
         </div>
         <div id="f-recent" class="recent"></div>
       </label>
       <label class="field">
-        <span>Name</span>
-        <input id="f-name" type="text" placeholder="auth-refactor" required spellcheck="false">
+        <span>Name <em>(optional)</em></span>
+        <input id="f-name" type="text" placeholder="auto" spellcheck="false">
       </label>
       <label class="field">
         <span>First prompt <em>(optional)</em></span>
@@ -88,6 +107,7 @@
           <select id="f-mode">
             <option value="default">Ask before acting</option>
             <option value="plan">Plan first (read-only)</option>
+            <option value="auto">Auto</option>
             <option value="acceptEdits">Auto-accept edits</option>
             <option value="bypassPermissions">Bypass all prompts ⚠</option>
           </select>
@@ -100,11 +120,44 @@
       </div>
     </form>
   </dialog>
+
+  <dialog id="settings-dialog">
+    <form id="settings-form" method="dialog">
+      <h2>Settings</h2>
+      <div class="set-grid">
+        <label class="field"><span>Font</span>
+          <select id="s-fontFamily">
+            <option>JetBrains Mono</option><option>SF Mono</option><option>Menlo</option><option>Monaco</option>
+            <option>Fira Code</option><option>Source Code Pro</option><option>Cascadia Code</option><option>Courier New</option>
+          </select></label>
+        <label class="field"><span>Text size</span><input id="s-fontSize" type="number" min="9" max="28" step="1"></label>
+        <label class="field"><span>Line spacing</span><input id="s-lineHeight" type="number" min="1" max="2" step="0.05"></label>
+        <label class="field"><span>Colours</span>
+          <select id="s-theme"><option value="midnight">Midnight (dark)</option><option value="paper">Paper (light)</option><option value="contrast">High contrast</option></select></label>
+        <label class="field"><span>Cursor</span>
+          <select id="s-cursorStyle"><option value="block">Block</option><option value="bar">Bar</option><option value="underline">Underline</option></select></label>
+        <label class="field"><span>Scrollback lines</span><input id="s-scrollback" type="number" min="1000" max="200000" step="1000"></label>
+        <label class="field"><span>Option key</span>
+          <select id="s-optionAsMeta"><option value="false">Types special characters (# € …)</option><option value="true">Acts as Meta (Esc+key)</option></select></label>
+        <label class="field"><span>Bell</span>
+          <select id="s-bell"><option value="visual">Flash</option><option value="sound">Sound</option><option value="off">Off</option></select></label>
+        <label class="field"><span>⌘-click files opens in</span>
+          <select id="s-editor"><option value="auto">First editor found</option><option value="vscode">VS Code</option><option value="cursor">Cursor</option><option value="zed">Zed</option><option value="system">macOS default app</option></select></label>
+      </div>
+      <label class="check"><input id="s-cursorBlink" type="checkbox"><span>Blinking cursor</span></label>
+      <label class="check"><input id="s-copyOnSelect" type="checkbox"><span>Copy text as soon as you select it</span></label>
+      <label class="check"><input id="s-restore" type="checkbox"><span>Reopen sessions after a restart (Claude conversations resume)</span></label>
+      <p class="set-note">Option+←/→ jump words and Option+⌫ deletes a word either way. Changes apply straight away.</p>
+      <div class="actions"><button type="submit" class="primary-btn">Done</button></div>
+    </form>
+  </dialog>
 </div>
 
 <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
 <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
 <script src="../node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+<script src="../node_modules/@xterm/addon-search/lib/addon-search.js"></script>
+<script src="../node_modules/@xterm/addon-serialize/lib/addon-serialize.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

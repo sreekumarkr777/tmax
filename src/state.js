@@ -46,9 +46,13 @@ function describeTool(name, input = {}) {
   }
 }
 
-function createSession({ id, name, cwd, branch = null, worktree = null, prompt = null }) {
+function createSession({ id, name, cwd, branch = null, worktree = null, prompt = null, kind = 'agent' }) {
   return {
     id, name, cwd, branch, worktree, prompt,
+    kind,                     // 'agent' (runs claude) | 'shell' (plain terminal)
+    cwdNow: cwd,              // where the shell is now (tracked while it runs)
+    command: null,            // foreground command in the terminal, if any
+    attention: null,          // 'bell' | 'finished' — something happened while you weren't looking
     createdAt: Date.now(),
     status: 'starting',       // starting | working | waiting | done | error | exited
     statusSince: Date.now(),

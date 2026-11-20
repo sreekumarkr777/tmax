@@ -54,6 +54,18 @@ module.exports = async function smoke({ app, win, createAgentSession, handleHook
   await win.webContents.executeJavaScript(`window.__sbMission(); window.__sbOpenNew()`);
   await wait(600);
   fs.writeFileSync(path.join(out, '3-new.png'), (await win.capturePage()).toPNG());
+
+  // ⌘T quick start: no dialog, reuses the active session's folder, auto-names, isolates in a worktree.
+  const before = await win.webContents.executeJavaScript(`document.querySelectorAll('#session-list .s-item').length`);
+  await win.webContents.executeJavaScript(`document.getElementById('new-dialog').close(); window.__sbSelect(${JSON.stringify(c.id)}); window.__sbQuick()`);
+  await wait(1200);
+  const quick = await win.webContents.executeJavaScript(`({
+    dialogOpen: document.getElementById('new-dialog').open,
+    count: document.querySelectorAll('#session-list .s-item').length,
+    title: [...document.querySelectorAll('#session-list .s-name')].map((e) => e.textContent).join(',') })`);
+  console.log('QUICK', JSON.stringify({ before, ...quick }));
+  if (quick.dialogOpen || quick.count !== before + 1) { console.log('QUICK_FAIL'); process.exitCode = 1; }
+  fs.writeFileSync(path.join(out, '4-quick.png'), (await win.capturePage()).toPNG());
   console.log('SMOKE_OK', out);
   app.quit();
 };

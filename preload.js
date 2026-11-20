@@ -1,16 +1,32 @@
 // The only bridge between the UI and the main process.
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('sb', {
   createSession: (opts) => ipcRenderer.invoke('session:create', opts),
+  createShell: (opts) => ipcRenderer.invoke('shell:create', opts),
   listSessions: () => ipcRenderer.invoke('session:list'),
+  claim: (id) => ipcRenderer.invoke('session:claim', id),
+  stash: (bufs) => ipcRenderer.sendSync('session:stash', bufs),
   write: (id, data) => ipcRenderer.send('session:write', id, data),
   resize: (id, cols, rows) => ipcRenderer.send('session:resize', id, cols, rows),
   kill: (id) => ipcRenderer.invoke('session:kill', id),
   reveal: (id) => ipcRenderer.invoke('session:reveal', id),
+  rename: (id, name) => ipcRenderer.invoke('session:rename', id, name),
+  setVisible: (ids, activeId) => ipcRenderer.send('view:visible', ids, activeId),
+  attention: (id, kind) => ipcRenderer.send('session:attention', id, kind),
   gitInfo: (cwd) => ipcRenderer.invoke('git:info', cwd),
-  setVoice: (on) => ipcRenderer.invoke('voice:set', on),
+  setVoice: (on, quiet) => ipcRenderer.invoke('voice:set', on, quiet),
   pickFolder: () => ipcRenderer.invoke('dialog:pickFolder'),
+  pathFor: (file) => { try { return webUtils.getPathForFile(file); } catch { return null; } },
+  isDir: (p) => ipcRenderer.invoke('fs:isDir', p),
+  resolvePaths: (id, cands) => ipcRenderer.invoke('path:resolve', id, cands),
+  openPath: (abs, line, col) => ipcRenderer.invoke('path:open', abs, line, col),
+  copy: (text) => ipcRenderer.invoke('clip:write', text),
+  readClipboard: () => ipcRenderer.invoke('clip:read'),
+  beep: () => ipcRenderer.invoke('beep'),
+  contextMenu: (opts) => ipcRenderer.invoke('menu:context', opts),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   platform: process.platform,
 
   onData: (cb) => ipcRenderer.on('pty:data', (_e, id, data) => cb(id, data)),
@@ -18,4 +34,5 @@ contextBridge.exposeInMainWorld('sb', {
   onFocusSession: (cb) => ipcRenderer.on('session:focus', (_e, id) => cb(id)),
   onMenu: (cb) => ipcRenderer.on('menu', (_e, action, arg) => cb(action, arg)),
   onWindowFocus: (cb) => ipcRenderer.on('window:focus', () => cb()),
+  onSettings: (cb) => ipcRenderer.on('settings:changed', (_e, s) => cb(s)),
 });

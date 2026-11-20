@@ -28,13 +28,26 @@ You need `claude` on your PATH. To use a different binary, run `SWITCHBOARD_CLAU
 
 | Key | Action |
 | --- | --- |
-| ⌘T | New agent session (⌘↵ in the prompt box starts it) |
+| ⌘T | New agent in the current folder (no form) |
+| ⌘⇧T | New agent with options (folder, prompt, worktree, permissions) |
+| ⌘O | Pick a folder and start an agent there (or drop a folder on the window) |
+| ⌘⇧N | New plain shell |
+| ⌘N | New window |
+| ⌘D / ⌘⇧D | Split right (new shell) / close split |
+| ⌘F, ⌘G, ⌘⇧G | Find in terminal, next, previous |
+| ⌘K | Clear the terminal |
 | ⌘J | Next agent that needs you |
 | ⌘0 | Mission Control |
 | ⌘1–9 | Switch session |
 | ⌘I | Toggle inspector |
-| ⌘W | Close session |
+| ⌘, | Settings |
+| ⌘W / ⌘⇧W | Close session / close window |
 | ⌘= / ⌘- | Text size |
+| ⌘⇧R | Reload the window (sessions and output are kept) |
+
+Terminal basics: ⌘-click a link or a file path (`src/a.ts:42`) to open it, right-click for copy/paste/find/split, Option+←/→ jumps words while Option still types `#` and `€`, double-click a session to rename it, and drop files onto a terminal to type their paths.
+
+Sessions come back after a restart: shells reopen in the folder you left them in with their output, and agents resume their Claude conversation (`claude --resume`). Turn this off in Settings.
 
 ## Layout
 
@@ -51,4 +64,4 @@ test/              npm test, plus a headless screenshot smoke test
 
 ## Not built yet
 
-Rewind/fork from the timeline, best-of-N compare, a permission inbox you can answer from inside the app, inline diff review, Kokoro voice with spoken commands, and restoring sessions after a restart.
+Rewind/fork from the timeline, best-of-N compare, a permission inbox you can answer from inside the app, inline diff review, and Kokoro voice with spoken commands.
