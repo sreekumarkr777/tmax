@@ -52,8 +52,13 @@ const mat = new THREE.ShaderMaterial({
     uniform float uTime, uScroll, uPixel;
     uniform vec2 uMouse;
     varying float vAlpha;
+    varying vec3 vColor;
     void main() {
       vec3 p = position;
+      // violet → indigo → cyan, like the app's accent
+      float k = fract(seed.z * 0.159);
+      vColor = k < 0.5 ? mix(vec3(0.545, 0.361, 0.965), vec3(0.435, 0.486, 0.973), k * 2.0)
+                       : mix(vec3(0.435, 0.486, 0.973), vec3(0.133, 0.827, 0.933), (k - 0.5) * 2.0);
       // drift up, wrap around, sway
       p.y = mod(p.y + uTime * seed.y + 11.0 + uScroll * (0.6 + seed.y * 2.0), 22.0) - 11.0;
       p.x += sin(uTime * 0.3 * seed.y + seed.z) * 0.6;
@@ -75,12 +80,13 @@ const mat = new THREE.ShaderMaterial({
     }`,
   fragmentShader: /* glsl */`
     varying float vAlpha;
+    varying vec3 vColor;
     void main() {
       vec2 c = gl_PointCoord - 0.5;
       float r = length(c);
       float a = smoothstep(0.5, 0.0, r);
       a *= a;
-      gl_FragColor = vec4(vec3(0.92, 0.93, 0.95), a * vAlpha * 0.8);
+      gl_FragColor = vec4(mix(vColor, vec3(1.0), 0.25), a * vAlpha * 0.9);
     }`,
 });
 const points = new THREE.Points(geo, mat);
