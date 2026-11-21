@@ -62,7 +62,7 @@
     filter: drop-shadow(0 0 40px rgba(124,92,255,.25)); }
   @keyframes flow { to { background-position: 100% 0; } }
   .mega .cur { display: inline-block; width: .3em; height: .72em; margin-left: .08em; vertical-align: -.01em; background: var(--cyan); opacity: .85; box-shadow: 0 0 34px rgba(34,211,238,.55); animation: blink 1.1s steps(2) infinite; }
-  .hero-row { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; margin-top: 48px; align-items: start; }
+  .hero-row { display: grid; grid-template-columns: minmax(0, 760px); margin-top: 48px; }
   .hero h1 { font: 600 clamp(30px, 3.6vw, 48px)/1.1 var(--display); margin: 0 0 20px; letter-spacing: -.005em; text-transform: uppercase; }
   .hero h1 span { color: var(--cyan); }
   .hero p { color: var(--text-2); font-size: 17px; margin: 0 0 30px; max-width: 520px; }
@@ -229,10 +229,6 @@
           <a class="btn" href="https://github.com/sreekumarkr777/tmax">View source</a>
         </div>
       </div>
-      <figure class="real rv d3">
-        <img src="img/hero-crop.jpg" alt="The real Tmax window: three agent sessions in the sidebar, one asking to run a command with Allow and Deny buttons" width="1400" height="960">
-        <figcaption>The real Tmax window. Demo sessions and sample token numbers.</figcaption>
-      </figure>
     </div>
   </div>
 
