@@ -1,6 +1,6 @@
 #!/bin/sh
 # Stand-in for `claude` in the smoke test (prints a banner, then echoes input).
-printf '\033[38;5;209m✻\033[0m \033[1mWelcome to Claude Code\033[0m  \033[2m(fake, for screenshots)\033[0m\n\n'
+printf '\033[38;5;209m✻\033[0m \033[1mWelcome to Claude Code\033[0m  \033[2m(demo session)\033[0m\n\n'
 printf '\033[2m  cwd: %s\033[0m\n\n' "$PWD"
 printf '> Sessions expire early on Safari — fix it\n\n'
 printf '\033[38;5;209m●\033[0m I traced it to the session cookie: \033[36mmaxAge\033[0m is passed in milliseconds,\n  but the serializer expects seconds. Safari rejects the huge value.\n\n'

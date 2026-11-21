@@ -1,20 +1,43 @@
-# Tmax
+<p align="center">
+  <img src="site/img/icon.png" width="112" alt="Tmax icon">
+</p>
 
-*Tmax = TokenMax.*
+<h1 align="center">Tmax</h1>
 
-An agent-native terminal for Claude Code. Every tab is an agent session, optionally in its own git worktree, and the app always knows what each agent is doing.
+<p align="center">
+  <b>A Mac terminal for running many Claude Code agents at once.</b><br>
+  See what every agent is doing, approve its requests without switching tabs, and watch every token.
+</p>
 
-## Run it
+<p align="center">
+  <a href="https://sreekumarkr777.github.io/tmax/">Website</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#shortcuts">Shortcuts</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="site/img/session.jpg" alt="Tmax running three Claude Code agents: one working, one asking permission, one finished" width="900">
+</p>
+
+*Tmax = TokenMax.* Every tab is an agent session, optionally in its own git worktree, and the app always knows what each agent is doing.
+
+> Tmax is an independent open-source project. It isn't affiliated with or endorsed by Anthropic.
+
+## Install
+
+You need **macOS**, **Node.js 18+** and **[Claude Code](https://docs.claude.com/en/docs/claude-code)** installed and signed in (`claude` on your PATH).
 
 ```bash
-cd ~/Workshop/switchboard
+git clone https://github.com/sreekumarkr777/tmax.git
+cd tmax
 npm install      # node-pty ships a macOS prebuild; no compiler needed
-npm start
+npm start        # or double-click Tmax.app in the folder
 ```
 
-You need `claude` on your PATH. To use a different binary, run `TMAX_CLAUDE=/path/to/claude npm start`.
+To use a different Claude binary, run `TMAX_CLAUDE=/path/to/claude npm start`.
 
-## What v0.1 does
+## What it does
 
 - **Agent sessions.** Each one runs `claude` in a real terminal (xterm.js and node-pty). When Claude exits, the tab drops to a normal shell.
 - **Worktree per agent.** Tick the box and the session gets its own worktree at `<repo>.worktrees/<name>` on branch `sb/<name>`.
@@ -57,6 +80,10 @@ Terminal basics: ⌘-click a link or a file path (`src/a.ts:42`) to open it, rig
 
 Sessions come back after a restart: shells reopen in the folder you left them in with their output, and agents resume their Claude conversation (`claude --resume`). Turn this off in Settings.
 
+## Privacy
+
+Everything stays on your machine. Claude Code reports its activity to Tmax over `127.0.0.1` using a per-session hooks file passed with `--settings`; your own `~/.claude` settings aren't changed. Tmax has no server, account or analytics.
+
 ## Layout
 
 ```
@@ -66,10 +93,20 @@ src/state.js       Hook events → session model (pure, unit-tested)
 src/hooks.js       Localhost hook server + per-session --settings file
 src/git.js         Repo detection and worktrees
 src/transcript.js  Context gauge from the transcript JSONL
+src/usage.js       Token and cost meter from the transcript JSONL
+site/              Landing page (published with GitHub Pages)
 renderer/          UI (plain HTML/CSS/JS, no build step)
 test/              npm test, plus a headless screenshot smoke test
 ```
 
-## Not built yet
+## Roadmap
 
 Sessions that survive quitting (tmux-backed), rewind/fork from the timeline, best-of-N compare, inline diff review, and Kokoro voice with spoken commands.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

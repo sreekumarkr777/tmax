@@ -2,9 +2,24 @@
   "name": "tmax",
   "productName": "Tmax",
   "version": "0.1.0",
-  "description": "An agent-native terminal for Claude Code.",
+  "description": "A Mac terminal for running many Claude Code agents at once.",
+  "license": "MIT",
+  "author": "Sreekumar",
+  "homepage": "https://sreekumarkr777.github.io/tmax/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sreekumarkr777/tmax.git"
+  },
+  "bugs": "https://github.com/sreekumarkr777/tmax/issues",
+  "keywords": [
+    "claude-code",
+    "terminal",
+    "ai-agents",
+    "electron",
+    "claude",
+    "coding-agents"
+  ],
   "main": "main.js",
-  "private": true,
   "scripts": {
     "start": "electron .",
     "prestart": "node scripts/brand-electron.js",
@@ -23,5 +38,6 @@
   "devDependencies": {
     "@electron/rebuild": "^4.2.1",
     "electron": "^45.3.3"
-  }
+  },
+  "private": true
 }

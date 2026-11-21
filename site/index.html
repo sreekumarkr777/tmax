@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tmax — the terminal for running Claude Code agents</title>
+<meta name="description" content="Tmax is a free, open-source Mac terminal for running many Claude Code agents at once: see what each one is doing, approve requests without switching tabs, and watch tokens and context.">
+<meta property="og:title" content="Tmax — the terminal for running Claude Code agents">
+<meta property="og:description" content="Run many Claude Code agents at once. See who needs you, approve without switching, watch every token.">
+<meta property="og:image" content="img/session.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.png">
+<style>
+  :root {
+    --bg: #06070C; --panel: #0C0D17; --line: #1C1E30; --line-2: #2A2D47;
+    --text: #ECEBF5; --text-2: #C3C4D8; --muted: #8E91AB; --dim: #6D7091;
+    --violet: #8B5CF6; --cyan: #22D3EE; --amber: #F5B544; --teal: #34D399;
+    --grad: linear-gradient(135deg, #8B5CF6 0%, #6F7CF8 50%, #22D3EE 100%);
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: inherit; }
+  img { max-width: 100%; height: auto; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  .glow-bg { position: fixed; inset: 0; pointer-events: none; z-index: -1;
+    background:
+      radial-gradient(900px 500px at 80% -10%, rgba(139,92,246,.20), transparent 60%),
+      radial-gradient(700px 420px at 0% 30%, rgba(34,211,238,.08), transparent 60%),
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 64px 64px,
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 64px 64px; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: rgba(6,7,12,.7); border-bottom: 1px solid rgba(255,255,255,.05); }
+  nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; letter-spacing: .02em; font-size: 18px; }
+  .logo img { width: 30px; height: 30px; }
+  .logo span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--muted); }
+  nav .links a { text-decoration: none; }
+  nav .links a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--line-2); background: rgba(19,20,35,.8); color: var(--text); transition: transform .15s, box-shadow .15s, border-color .15s; white-space: nowrap; }
+  .btn:hover { border-color: #3D4170; transform: translateY(-1px); }
+  .btn.primary { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 10px 30px rgba(124,92,255,.35); }
+  .btn.primary:hover { box-shadow: 0 14px 40px rgba(124,92,255,.5); }
+  .btn.sm { padding: 7px 13px; font-size: 13.5px; }
+
+  /* hero */
+  .hero { text-align: center; padding: 96px 24px 40px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--text-2);
+    background: linear-gradient(rgba(12,13,23,.9), rgba(12,13,23,.9)) padding-box, var(--grad) border-box; border: 1px solid transparent; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  h1 { font-size: clamp(40px, 6.4vw, 76px); line-height: 1.03; letter-spacing: -.035em; margin: 26px auto 22px; max-width: 900px; font-weight: 800; }
+  h1 em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: clamp(17px, 2vw, 20px); color: var(--text-2); max-width: 680px; margin: 0 auto 34px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .note { margin-top: 16px; font-size: 13px; color: var(--dim); }
+
+  .shot { position: relative; margin: 64px auto 0; max-width: 1160px; }
+  .shot::before { content: ""; position: absolute; inset: 8% 6% -4%; background: var(--grad); filter: blur(80px); opacity: .28; z-index: -1; border-radius: 40px; }
+  .shot img { width: 100%; display: block; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+
+  /* sections */
+  section { padding: 110px 0 0; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); }
+  h2 { font-size: clamp(30px, 4vw, 46px); letter-spacing: -.03em; line-height: 1.1; margin: 12px 0 16px; font-weight: 750; }
+  .sub { color: var(--text-2); max-width: 640px; font-size: 17px; margin: 0; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+  .card { padding: 24px; border-radius: 16px; background: rgba(13,14,25,.75); border: 1px solid var(--line); transition: border-color .2s, transform .2s; }
+  .card:hover { border-color: rgba(139,92,246,.45); transform: translateY(-2px); }
+  .card .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(139,92,246,.22), rgba(34,211,238,.12)); border: 1px solid rgba(139,92,246,.3); }
+  .card h3 { margin: 0 0 8px; font-size: 17px; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+
+  .split { display: grid; grid-template-columns: 1fr 1.25fr; gap: 56px; align-items: center; margin-top: 30px; }
+  .split.rev { grid-template-columns: 1.25fr 1fr; }
+  .split.rev .copy { order: 2; }
+  .split img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .ticks { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 12px; }
+  .ticks li { position: relative; padding-left: 30px; color: var(--text-2); font-size: 15.5px; }
+  .ticks li::before { content: ""; position: absolute; left: 0; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--grad); box-shadow: 0 0 12px rgba(139,92,246,.4);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12'/%3E%3C/svg%3E"); }
+
+  /* install */
+  .install { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .code { position: relative; border-radius: 14px; background: #090A12; border: 1px solid var(--line-2); padding: 20px 22px; font: 14px/1.9 var(--mono); color: var(--text-2); overflow-x: auto; }
+  .code .p { color: var(--violet); user-select: none; }
+  .code .c { color: var(--dim); }
+  .copy-btn { position: absolute; top: 12px; right: 12px; font: 12px var(--sans); padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line-2); background: #14152A; color: var(--text-2); cursor: pointer; }
+  .copy-btn:hover { color: var(--text); }
+  .req { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .req li { padding: 16px 18px; border-radius: 12px; border: 1px solid var(--line); background: rgba(13,14,25,.7); color: var(--text-2); font-size: 15px; }
+  .req b { color: var(--text); }
+
+  /* faq */
+  .faq { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
+  details { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::after { content: "+"; color: var(--violet); font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--muted); margin: 10px 0 0; font-size: 15px; }
+
+  .final { text-align: center; padding: 120px 0 100px; }
+  .final img { width: 96px; height: 96px; filter: drop-shadow(0 10px 40px rgba(124,92,255,.5)); }
+  footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--dim); font-size: 13.5px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  kbd { font-family: var(--mono); font-size: 12px; padding: 2px 6px; border-radius: 5px; background: rgba(139,92,246,.14); color: #CFC4FF; }
+
+  @media (max-width: 900px) {
+    .grid, .install, .faq { grid-template-columns: 1fr; }
+    .split, .split.rev { grid-template-columns: 1fr; gap: 28px; }
+    .split.rev .copy { order: 0; }
+    nav .links { display: none; }
+    nav .wrap { justify-content: space-between; }
+    .wrap { padding: 0 16px; }
+    .hero { padding: 64px 16px 40px; }
+    section { padding-top: 80px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="glow-bg" aria-hidden="true"></div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#"><img src="img/icon.png" alt=""><span>Tmax</span></a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn sm" href="https://github.com/sreekumarkr777/tmax">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <span class="pill"><i></i>Free and open source · macOS</span>
+  <h1>Run a team of <em>Claude Code</em> agents from one terminal</h1>
+  <p class="lede">Tmax is a terminal built for running many coding agents at once. See what every agent is doing, approve its requests without switching tabs, and watch every token and how full each context is.</p>
+  <div class="cta">
+    <a class="btn primary" href="#install">Get started</a>
+    <a class="btn" href="https://github.com/sreekumarkr777/tmax">Star on GitHub</a>
+  </div>
+  <div class="note">MIT licensed · runs locally · nothing leaves your machine</div>
+  <div class="shot"><img src="img/session.jpg" alt="Tmax with three agent sessions: one working, one asking permission, one finished; the inspector shows context and token use" width="2400" height="1533"></div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow">Why Tmax</div>
+    <h2>Built around agents, not tabs</h2>
+    <p class="sub">A normal terminal only sees text going in and out. Tmax hears from Claude Code itself, so it knows which agent is thinking, which one is stuck, and which one is waiting for you.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h3>Approve without switching</h3>
+        <p>Permission requests show up in the sidebar with the exact command. Click Allow or Deny, or reply from the side panel, without leaving the agent you're watching.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+        <h3>Every token counted</h3>
+        <p>Tokens and estimated cost for each agent, a running total for today, and a context gauge that offers <kbd>/compact</kbd> before the context window fills up.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <h3>Mission Control</h3>
+        <p>Every agent as a live card with what it's saying and doing. <kbd>⌘J</kbd> jumps straight to the next one that needs you.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"/></svg></div>
+        <h3>A worktree per agent</h3>
+        <p>Give each agent its own git worktree and branch so they don't trip over each other. Tmax warns you when two agents edit the same file.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div>
+        <h3>Safety you can see</h3>
+        <p>The window border turns teal, amber or red with the agent's permission mode, so you always know whether it asks first or acts on its own.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg></div>
+        <h3>Catches stuck agents</h3>
+        <p>An agent failing the same step over and over gets flagged with an Interrupt button and an alert, before it burns through your tokens.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div class="copy">
+      <div class="eyebrow">One glance</div>
+      <h2>Know who needs you</h2>
+      <p class="sub">Glowing status lights show which agents are working, waiting or done. A timeline marks every read, edit, command and subagent as it happens.</p>
+      <ul class="ticks">
+        <li>Notifications, a Dock badge and optional spoken alerts when an agent needs you</li>
+        <li>Collision warnings when two agents edit the same file</li>
+        <li>Search every terminal's output at once with <kbd>⌘P</kbd></li>
+      </ul>
+    </div>
+    <img src="img/mission.jpg" alt="Mission Control: one card per agent with status, last message, current tool and token use" loading="lazy" width="2400" height="1533">
+  </div>
+</section>
+
+<section>
+  <div class="wrap split rev">
+    <div class="copy">
+      <div class="eyebrow">Still a real terminal</div>
+      <h2>Everything you expect, plus agents</h2>
+      <p class="sub">Plain shell tabs, split panes, find, <kbd>⌘</kbd>-click to open files in your editor, Ctrl+R history search, themes and multiple windows.</p>
+      <ul class="ticks">
+        <li>Sessions come back after a restart, and Claude conversations resume</li>
+        <li>New agents start in your current folder with one keypress: <kbd>⌘T</kbd></li>
+        <li>Frosted-glass window, or solid if you prefer</li>
+      </ul>
+    </div>
+    <img src="img/approve.jpg" alt="An agent asking to run a command, with Allow and Deny buttons in the sidebar and the inspector" loading="lazy" width="2400" height="1533">
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="eyebrow">Install</div>
+    <h2>Up and running in a minute</h2>
+    <p class="sub">Tmax runs from source for now. A signed Mac download is on the way.</p>
+    <div class="install">
+      <div class="code" id="cmds"><button class="copy-btn" type="button" data-copy="git clone https://github.com/sreekumarkr777/tmax.git&#10;cd tmax&#10;npm install&#10;npm start">Copy</button><span class="p">$ </span>git clone https://github.com/sreekumarkr777/tmax.git
+<br><span class="p">$ </span>cd tmax
+<br><span class="p">$ </span>npm install
+<br><span class="p">$ </span>npm start
+<br><span class="c"># or double-click Tmax.app in the folder</span></div>
+      <ul class="req">
+        <li><b>macOS</b> on Apple silicon or Intel</li>
+        <li><b>Node.js 18+</b> and npm</li>
+        <li><b>Claude Code</b> installed and signed in (<code>claude</code> on your PATH)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="eyebrow">FAQ</div>
+    <h2>Questions</h2>
+    <div class="faq">
+      <details><summary>Is this made by Anthropic?</summary><p>No. Tmax is an independent open-source project built on top of Claude Code. It isn't affiliated with or endorsed by Anthropic.</p></details>
+      <details><summary>Does it send my code or data anywhere?</summary><p>No. Claude Code reports its activity to Tmax over localhost on your own machine. Tmax has no server, no account and no analytics.</p></details>
+      <details><summary>How does it know what the agent is doing?</summary><p>It passes Claude Code a hooks file for each session. Your own <code>~/.claude</code> settings are left untouched. Tokens and context are read from the session's transcript.</p></details>
+      <details><summary>Is the cost figure what I pay?</summary><p>It's the cost at Anthropic API list prices. If you're on a Claude plan, think of it as the value you've used, not a bill.</p></details>
+      <details><summary>Windows or Linux?</summary><p>Not yet. The app is Electron, so it's mostly portable, and contributions are welcome.</p></details>
+      <details><summary>Can I contribute?</summary><p>Yes, please. Issues and pull requests are welcome on GitHub. See CONTRIBUTING.md to get started.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="final wrap">
+  <img src="img/icon.png" alt="Tmax icon">
+  <h2>Max out your agents, not your attention</h2>
+  <div class="cta" style="margin-top:26px">
+    <a class="btn primary" href="#install">Get started</a>
+    <a class="btn" href="https://github.com/sreekumarkr777/tmax">View on GitHub</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>Tmax · MIT License</span>
+    <span>Not affiliated with Anthropic. Claude and Claude Code are trademarks of Anthropic.</span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch {}
+  }));
+</script>
+</body>
+</html>
