@@ -16,22 +16,22 @@ try {
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
+renderer.toneMappingExposure = 1.32;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const C = {
   night: new THREE.Color('#1b1a2c'),
   dusk: new THREE.Color('#2a2840'),
-  bronze: new THREE.Color('#c79f78'),
-  sand: new THREE.Color('#ead9c2'),
-  light: new THREE.Color('#f6efe4'),
-  ink: new THREE.Color('#141320'),
+  bronze: new THREE.Color('#22d3ee'),
+  sand: new THREE.Color('#c4b5fd'),
+  light: new THREE.Color('#e6fbff'),
+  ink: new THREE.Color('#06070c'),
 };
 
 const scene = new THREE.Scene();
 // Far away everything dissolves into warm light, like a corridor opening onto the sun.
-scene.fog = new THREE.Fog(new THREE.Color('#d8c1a4'), 18, 175);
+scene.fog = new THREE.Fog(new THREE.Color('#4a40a6'), 18, 175);
 
 // Sky: navy overhead, glowing toward the horizon (screen-space gradient).
 {
@@ -39,10 +39,11 @@ scene.fog = new THREE.Fog(new THREE.Color('#d8c1a4'), 18, 175);
   c.width = 4; c.height = 512;
   const g = c.getContext('2d');
   const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, '#161526');
-  grad.addColorStop(0.45, '#3a3450');
-  grad.addColorStop(0.78, '#c9ad8e');
-  grad.addColorStop(1, '#f2e7d8');
+  grad.addColorStop(0, '#07080d');
+  grad.addColorStop(0.45, '#15132e');
+  grad.addColorStop(0.74, '#3d348a');
+  grad.addColorStop(0.9, '#3fb6d8');
+  grad.addColorStop(1, '#d4f6ff');
   g.fillStyle = grad; g.fillRect(0, 0, 4, 512);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -52,8 +53,8 @@ scene.fog = new THREE.Fog(new THREE.Color('#d8c1a4'), 18, 175);
 const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 600);
 
 // ---------- light ----------
-scene.add(new THREE.HemisphereLight('#6d6694', '#2a2438', 1.7));
-const sun = new THREE.DirectionalLight('#ffd3a3', 5.2);
+scene.add(new THREE.HemisphereLight('#5048a0', '#0b0b18', 1.55));
+const sun = new THREE.DirectionalLight('#bfeeff', 5.6);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 const sc = sun.shadow.camera;
@@ -73,7 +74,7 @@ scene.add(glow);
 // ---------- floor ----------
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(400, 700),
-  new THREE.MeshStandardMaterial({ color: '#5d4f5f', roughness: 0.9, metalness: 0.05 })
+  new THREE.MeshStandardMaterial({ color: '#24223f', roughness: 0.9, metalness: 0.05 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.z = -200;
@@ -83,7 +84,7 @@ scene.add(floor);
 // ---------- pillars ----------
 const PILLAR_H = 90;
 const pillarGeo = new THREE.CylinderGeometry(2.4, 2.4, PILLAR_H, 64, 1);
-const pillarMat = new THREE.MeshStandardMaterial({ color: '#a8846e', roughness: 0.72, metalness: 0.06 });
+const pillarMat = new THREE.MeshStandardMaterial({ color: '#68648f', roughness: 0.7, metalness: 0.1 });
 const rows = [
   { x: -11, step: 13, r: 1 }, { x: 11, step: 13, r: 1 },
   { x: -26, step: 15, r: 1.3 }, { x: 26, step: 15, r: 1.3 },
@@ -107,7 +108,7 @@ scene.add(pillars);
 // low drums and bollards on the floor
 {
   const g = new THREE.CylinderGeometry(0.55, 0.55, 0.7, 32);
-  const mat = new THREE.MeshStandardMaterial({ color: '#2a2638', roughness: 0.6 });
+  const mat = new THREE.MeshStandardMaterial({ color: '#15152e', roughness: 0.6 });
   const n = 16;
   const drums = new THREE.InstancedMesh(g, mat, n);
   drums.castShadow = true; drums.receiveShadow = true;
@@ -167,7 +168,7 @@ for (let i = 0; i < 16; i++) makeTrace(-7 + Math.random() * 14, -6 - Math.random
 
 // light pulses running along the traces
 const pulseGeo = new THREE.SphereGeometry(0.06, 12, 8);
-const pulseMat = new THREE.MeshBasicMaterial({ color: '#fff3df', toneMapped: false });
+const pulseMat = new THREE.MeshBasicMaterial({ color: '#ecfeff', toneMapped: false });
 const pulses = [];
 for (let i = 0; i < 26; i++) {
   const m = new THREE.Mesh(pulseGeo, pulseMat);
@@ -188,12 +189,12 @@ const rain = [];
 for (let i = 0; i < RAIN; i++) rain.push({ x: (Math.random() - 0.5) * 34, z: 8 - Math.random() * 170, y: Math.random() * 40, len: 1.5 + Math.random() * 4, v: 2 + Math.random() * 5 });
 const rainGeo = new THREE.BufferGeometry();
 rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-const rainLines = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: '#efe0c8', transparent: true, opacity: 0.55, toneMapped: false }));
+const rainLines = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: '#a5f3fc', transparent: true, opacity: 0.5, toneMapped: false }));
 scene.add(rainLines);
 const dropGeo = new THREE.BufferGeometry();
 const dropPos = new Float32Array(RAIN * 3);
 dropGeo.setAttribute('position', new THREE.BufferAttribute(dropPos, 3));
-const drops = new THREE.Points(dropGeo, new THREE.PointsMaterial({ color: '#fff6e8', size: 0.16, transparent: true, opacity: 0.95, toneMapped: false }));
+const drops = new THREE.Points(dropGeo, new THREE.PointsMaterial({ color: '#ecfeff', size: 0.16, transparent: true, opacity: 0.95, toneMapped: false }));
 scene.add(drops);
 function updateRain(dt) {
   for (let i = 0; i < RAIN; i++) {
