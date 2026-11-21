@@ -13,267 +13,267 @@
 <link rel="icon" href="img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lexend+Exa:wght@200;300;400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --night: #07080d; --dusk: #12132a; --ink: #07080d;
-    --bronze: #22d3ee; --bronze-2: #6f7cf8; --sand: #ecebf5; --light: #f7f7fd;
-    --violet: #a78bfa; --grad: linear-gradient(135deg, #8b5cf6 0%, #6f7cf8 50%, #22d3ee 100%);
-    --muted: #8e91ab; --dim: #6d7091;
-    --serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+    --bg-1: #45484c; --bg-2: #2a2c2f; --bg-3: #17181a;
+    --slab: #1d1e20; --slab-2: #232427; --edge: rgba(255,255,255,.07);
+    --text: #e6e7e9; --text-2: #b9bbbf; --muted: #8a8d92; --dim: #63666b;
+    --wide: "Lexend Exa", "Inter", sans-serif;
     --sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
   }
   * { box-sizing: border-box; }
-  html { background: var(--night); }
-  body { margin: 0; color: var(--sand); font: 300 16px/1.7 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-  a { color: inherit; }
+  html { background: var(--bg-3); }
+  body { margin: 0; color: var(--text); font: 300 15px/1.7 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    background: radial-gradient(120% 90% at 22% 8%, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%) fixed; }
+  a { color: inherit; text-decoration: none; }
   img { max-width: 100%; height: auto; display: block; }
 
-  /* the hall sits behind everything */
-  #hall { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 0; opacity: 0; transition: opacity 1.6s ease; }
-  html.hall-ready #hall { opacity: 1; }
-  html.no-webgl body { background: linear-gradient(180deg, #07080d 0%, #1d1846 45%, #5b4fd0 75%, #5fc9e8 90%, #d9f8ff 100%) fixed; }
-  /* film grain + vignette for the illustrated feel */
-  .grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .06;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grain 1.2s steps(6) infinite; }
-  @keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-3%,2%)} 50%{transform:translate(2%,-3%)} 75%{transform:translate(-2%,-1%)} 100%{transform:translate(0,0)} }
-  .vignette { position: fixed; inset: 0; z-index: 1; pointer-events: none;
-    background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(4,5,9,.55) 100%); }
+  #dust { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 2s ease; }
+  html.dust-ready #dust { opacity: 1; }
+  /* a soft shaft of light from the upper left, and grain */
+  .beam { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(118deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.025) 28%, transparent 48%); }
+  .grain { position: fixed; inset: -50%; z-index: 1; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grain 1.4s steps(6) infinite; }
+  @keyframes grain { 0%{transform:translate(0,0)} 33%{transform:translate(-2%,2%)} 66%{transform:translate(2%,-1%)} 100%{transform:translate(0,0)} }
+  main, header, footer { position: relative; z-index: 2; }
 
-  main, footer { position: relative; z-index: 2; }
+  /* header */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 30px 44px; }
+  .brand { font: 300 13px/1 var(--wide); letter-spacing: .32em; text-transform: uppercase; color: var(--text-2); display: flex; align-items: center; gap: 12px; }
+  .brand img { width: 22px; height: 22px; filter: grayscale(1) brightness(1.4); opacity: .85; }
+  header nav { display: flex; gap: 30px; }
+  header nav a, .tiny { font: 400 10px/1 var(--mono); letter-spacing: .28em; text-transform: uppercase; color: var(--muted); transition: color .3s; }
+  header nav a:hover { color: var(--text); }
 
-  /* top bar */
-  header.top { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 28px; padding: 26px 48px 40px; z-index: 5; background: linear-gradient(rgba(7,8,13,.72), rgba(7,8,13,0)); pointer-events: none; }
-  header.top a { pointer-events: auto; }
-  .mark { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-  .mark img { width: 26px; height: 26px; }
-  .mark span { font: 500 11px/1 var(--mono); letter-spacing: .42em; text-transform: uppercase; color: var(--sand); }
-  header.top nav { margin-left: auto; display: flex; gap: 30px; }
-  header.top nav a, .label { font: 400 10.5px/1 var(--mono); letter-spacing: .38em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
-  header.top nav a:hover { color: var(--sand); }
-  .progress { position: fixed; left: 48px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 14px; }
-  .progress a { width: 7px; height: 7px; border: 1px solid var(--bronze-2); border-radius: 50%; display: block; transition: background .3s, transform .3s; }
-  .progress a.on { background: var(--bronze); transform: scale(1.35); box-shadow: 0 0 10px rgba(34,211,238,.8); }
+  /* the slab */
+  .hero { min-height: calc(100vh - 82px); display: grid; place-items: center; padding: 0 20px 60px; perspective: 1400px; }
+  .slab { position: relative; width: min(340px, 82vw, 52vh); aspect-ratio: 380 / 620; border-radius: 6px;
+    background: linear-gradient(160deg, var(--slab-2) 0%, var(--slab) 55%, #19191b 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px var(--edge), 30px 50px 80px rgba(0,0,0,.45), 8px 14px 24px rgba(0,0,0,.35);
+    transform-style: preserve-3d; transition: transform .6s cubic-bezier(.2,.7,.2,1); will-change: transform; overflow: hidden;
+    padding: 30px 28px; display: flex; flex-direction: column; }
+  .slab::before { /* sheen that follows the cursor */ content: ""; position: absolute; inset: 0; pointer-events: none; opacity: var(--sheen, 0); transition: opacity .5s;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 30%), rgba(255,255,255,.09), transparent 60%); }
+  .slab .notch { width: 22px; height: 3px; border-radius: 2px; background: #3a3c40; margin: 0 auto; }
+  .slab .live { position: absolute; top: 26px; right: 26px; display: flex; align-items: center; gap: 7px; }
+  .slab .live i { width: 5px; height: 5px; border-radius: 50%; background: #cfd2d6; animation: breathe 2.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .25; } }
+  .slab-body { margin-top: auto; }
+  .kicker { font: 300 12px/1 var(--sans); color: var(--muted); letter-spacing: .02em; }
+  .title { font: 200 clamp(36px, 8vw, 46px)/1 var(--wide); letter-spacing: .02em; margin: 12px 0 30px; color: #d9dadc;
+    background: linear-gradient(100deg, #9da0a5 0%, #f1f2f3 40%, #9da0a5 60%, #9da0a5 100%); background-size: 260% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 7s ease-in-out infinite; }
+  @keyframes shine { 0%, 15% { background-position: 100% 0; } 55%, 100% { background-position: -60% 0; } }
+  .spec { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 18px; align-items: end; }
+  .spec .it { display: flex; gap: 10px; align-items: flex-start; }
+  .spec svg { width: 16px; height: 16px; flex: none; margin-top: 2px; stroke: #9a9da2; fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+  .spec small { display: block; font: 400 8.5px/1.3 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .spec b { display: block; font: 400 12.5px/1.35 var(--sans); color: #cfd1d4; }
+  .spec .ring { justify-self: end; width: 44px; height: 44px; margin: 0; stroke: none; }
+  .ring circle { fill: none; stroke-width: 3.2; }
+  .ring .track { stroke: #2e3033; }
+  .ring .val { stroke: #c9ccd0; stroke-linecap: round; stroke-dasharray: 113; stroke-dashoffset: 113; transform: rotate(-90deg); transform-origin: 50% 50%; animation: fill 6s cubic-bezier(.6,0,.2,1) infinite; }
+  @keyframes fill { 0% { stroke-dashoffset: 113; } 55%, 80% { stroke-dashoffset: 30; } 100% { stroke-dashoffset: 113; } }
+  .hero-line { margin-top: 36px; text-align: center; }
+  .hero-line p { margin: 0 auto 26px; max-width: 460px; color: var(--text-2); font-size: 15px; }
+  .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { font: 400 10.5px/1 var(--mono); letter-spacing: .26em; text-transform: uppercase; padding: 15px 22px; border: 1px solid rgba(255,255,255,.14); color: var(--text); background: rgba(20,21,23,.35); backdrop-filter: blur(6px); transition: background .3s, border-color .3s, color .3s; }
+  .btn:hover { border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.06); }
+  .btn.solid { background: #e6e7e9; color: #161719; border-color: #e6e7e9; }
+  .btn.solid:hover { background: #fff; }
 
-  /* chapters */
-  .ch { min-height: 100vh; display: flex; align-items: center; padding: 120px 48px 120px 120px; position: relative; }
-  .ch.right { justify-content: flex-end; }
-  .ch.center { justify-content: center; text-align: center; }
-  .panel { max-width: 560px; position: relative; }
-  .panel::before { /* soft shade so text reads over the light */ content: ""; position: absolute; inset: -60px -80px; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(7,8,13,.62), rgba(7,8,13,0)); }
-  .label { color: var(--bronze); display: inline-flex; align-items: center; gap: 14px; }
-  .label::before { content: ""; width: 34px; height: 1px; background: var(--bronze-2); }
-  .ch.center .label::before, .scroll-cue .label::before { display: none; }
-  h1, h2 { font-family: var(--serif); font-weight: 300; color: var(--light); margin: 22px 0 22px; letter-spacing: -.01em; }
-  h1 { font-size: clamp(52px, 8.4vw, 124px); line-height: .92; }
-  h2 { font-size: clamp(38px, 5.2vw, 76px); line-height: 1; }
-  h1 em, h2 em { font-style: italic; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .06em; }
-  .lede { font-size: clamp(16px, 1.5vw, 19px); color: #d4d5e8; max-width: 520px; margin: 0; }
-  p { color: #c6c7da; }
-  .actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 38px; }
-  .ch.center .actions { justify-content: center; }
-  .btn { display: inline-flex; align-items: center; gap: 12px; padding: 15px 24px; font: 400 11px/1 var(--mono); letter-spacing: .3em; text-transform: uppercase; text-decoration: none;
-    color: var(--sand); border: 1px solid rgba(139,92,246,.55); background: rgba(7,8,13,.35); backdrop-filter: blur(6px); transition: background .3s, color .3s, border-color .3s; }
-  .btn:hover { background: rgba(139,92,246,.22); color: #fff; border-color: var(--violet); }
-  .btn.solid { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 10px 34px rgba(124,92,255,.4); }
-  .btn.solid:hover { filter: brightness(1.12); background: var(--grad); color: #fff; }
-  .scroll-cue { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .scroll-cue i { width: 1px; height: 56px; background: linear-gradient(var(--bronze), transparent); animation: cue 2.4s ease-in-out infinite; transform-origin: top; }
-  @keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+  /* sections */
+  section { padding: 120px 44px; max-width: 1180px; margin: 0 auto; }
+  .head { display: flex; justify-content: space-between; align-items: end; gap: 40px; margin-bottom: 54px; flex-wrap: wrap; }
+  h2 { font: 200 clamp(30px, 4vw, 52px)/1.08 var(--wide); letter-spacing: .01em; margin: 14px 0 0; color: #dfe0e2; max-width: 640px; }
+  .head p { max-width: 380px; margin: 0; color: var(--muted); }
 
-  /* the icon set */
-  .icons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 54px 64px; margin-top: 56px; text-align: left; max-width: 980px; }
-  .icon svg { width: 46px; height: 46px; stroke: url(#ig); fill: none; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 20px; }
-  .icon h3 { margin: 0 0 8px; font: 400 10.5px/1.4 var(--mono); letter-spacing: .34em; text-transform: uppercase; color: var(--sand); }
-  .icon p { margin: 0; font-size: 14.5px; line-height: 1.65; color: #b4b6cc; }
-  .ch.icons-ch .panel { max-width: 1000px; }
-  .ch.icons-ch .panel::before { inset: -90px -140px; background: radial-gradient(closest-side, rgba(7,8,13,.88), rgba(7,8,13,.55) 70%, rgba(7,8,13,0)); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .tile { position: relative; padding: 30px 26px 28px; min-height: 210px; border-radius: 5px; background: linear-gradient(160deg, rgba(37,38,41,.82), rgba(26,27,29,.82));
+    box-shadow: 0 0 0 1px var(--edge), 18px 26px 50px rgba(0,0,0,.28); overflow: hidden; transition: transform .5s cubic-bezier(.2,.7,.2,1), box-shadow .5s; display: flex; flex-direction: column; }
+  .tile::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s;
+    background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.07), transparent 60%); }
+  .tile:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(255,255,255,.12), 22px 34px 60px rgba(0,0,0,.36); }
+  .tile:hover::before { opacity: 1; }
+  .tile svg { width: 22px; height: 22px; stroke: #a5a8ad; fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+  .tile .n { position: absolute; top: 26px; right: 24px; }
+  .tile h3 { margin: 44px 0 8px; font: 300 17px/1.3 var(--wide); letter-spacing: .01em; color: #e0e1e3; }
+  .tile p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 
-  /* the doorway: a screenshot set into a slab of light */
-  .door { position: relative; width: min(1100px, 100%); margin: 50px auto 0; padding: 14px; background: linear-gradient(180deg, rgba(167,139,250,.18), rgba(167,139,250,.04)); border: 1px solid rgba(167,139,250,.28); }
-  .door::before { content: ""; position: absolute; inset: -40px -80px -120px; z-index: -1; background: radial-gradient(60% 55% at 50% 40%, rgba(34,211,238,.32), transparent 70%); filter: blur(10px); }
-  .door img { width: 100%; box-shadow: 0 40px 100px rgba(3,4,8,.7); }
-  .caption { display: flex; justify-content: space-between; gap: 20px; width: min(1100px, 100%); margin: 18px auto 0; font: 400 10px/1.5 var(--mono); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
-  .ch.wide { flex-direction: column; justify-content: center; padding-left: 48px; }
-  .ch.wide .panel { max-width: 760px; text-align: center; margin: 0 auto; }
-  .ch.wide .label::before { display: none; }
+  /* screenshot in a frame, monochrome until you look at it */
+  .frame { position: relative; padding: 12px; border-radius: 6px; background: linear-gradient(160deg, #262729, #1a1b1d); box-shadow: 0 0 0 1px var(--edge), 40px 60px 100px rgba(0,0,0,.45); }
+  .frame img { border-radius: 3px; filter: grayscale(1) contrast(1.05) brightness(.9); transition: filter 1.2s ease; }
+  .frame:hover img, .frame.in-view img { filter: none; }
+  .frame-cap { display: flex; justify-content: space-between; margin-top: 16px; }
 
-  /* install */
-  .slab { margin-top: 34px; padding: 26px 30px; background: rgba(9,10,18,.78); border: 1px solid rgba(139,92,246,.3); backdrop-filter: blur(8px); font: 400 14px/2 var(--mono); color: var(--sand); position: relative; overflow-x: auto; }
-  .slab .p { color: var(--bronze); user-select: none; }
-  .slab .c { color: var(--dim); }
-  .copy-btn { position: absolute; top: 14px; right: 14px; font: 400 10px/1 var(--mono); letter-spacing: .3em; text-transform: uppercase; padding: 8px 10px; background: transparent; color: var(--muted); border: 1px solid rgba(139,92,246,.35); cursor: pointer; }
-  .copy-btn:hover { color: var(--sand); border-color: var(--bronze); }
-  .needs { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14.5px; color: #c6c7da; }
-  .needs li::before { content: "—"; color: var(--bronze); margin-right: 12px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .code { position: relative; padding: 28px; border-radius: 5px; background: rgba(20,21,23,.85); box-shadow: 0 0 0 1px var(--edge); font: 400 13.5px/2 var(--mono); color: #d4d6d9; overflow-x: auto; }
+  .code .p { color: var(--dim); user-select: none; }
+  .copy { position: absolute; top: 16px; right: 16px; font: 400 9.5px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; padding: 8px 10px; background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,.12); cursor: pointer; }
+  .copy:hover { color: var(--text); border-color: rgba(255,255,255,.3); }
+  .reqs { padding: 28px; border-radius: 5px; background: rgba(28,29,31,.7); box-shadow: 0 0 0 1px var(--edge); display: grid; gap: 18px; align-content: start; }
+  .reqs div { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .reqs div:last-child { border: 0; padding: 0; }
+  .reqs b { font-weight: 400; color: var(--text-2); }
 
-  /* faq */
-  .faq { margin-top: 30px; }
-  details { border-top: 1px solid rgba(139,92,246,.25); padding: 18px 0; }
-  details:last-child { border-bottom: 1px solid rgba(139,92,246,.25); }
-  summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 20px; font: 400 22px/1.4 var(--serif); color: var(--light); }
-  summary::-webkit-details-marker { display: none; }
-  summary::after { content: "+"; font: 300 18px/1 var(--mono); color: var(--bronze); }
-  details[open] summary::after { content: "−"; }
-  details p { margin: 10px 0 0; font-size: 15px; color: #b4b6cc; }
+  .faq details { border-top: 1px solid rgba(255,255,255,.08); padding: 22px 0; }
+  .faq details:last-child { border-bottom: 1px solid rgba(255,255,255,.08); }
+  .faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 20px; font: 300 17px/1.4 var(--wide); color: #dcdde0; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font: 300 16px/1 var(--mono); color: var(--muted); transition: transform .3s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { margin: 12px 0 0; max-width: 720px; color: var(--muted); }
 
-  footer { padding: 40px 48px 46px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; font: 400 10px/1.6 var(--mono); letter-spacing: .25em; text-transform: uppercase; color: var(--dim); background: linear-gradient(transparent, rgba(7,8,13,.8)); }
-  footer a { text-decoration: none; color: var(--muted); }
+  .end { text-align: center; padding: 150px 20px 120px; }
+  .end h2 { margin: 18px auto 34px; }
+  footer { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 30px 44px 40px; border-top: 1px solid rgba(255,255,255,.06); }
+  footer span, footer a { font: 400 9.5px/1.6 var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+  footer a:hover { color: var(--text-2); }
+  kbd, code { font: 400 .9em var(--mono); color: var(--text-2); }
 
-  /* reveal on scroll */
-  .rv { opacity: 0; transform: translateY(26px); transition: opacity 1.2s cubic-bezier(.2,.7,.2,1), transform 1.2s cubic-bezier(.2,.7,.2,1); }
-  .rv.in { opacity: 1; transform: none; }
-  .rv.d1 { transition-delay: .12s; } .rv.d2 { transition-delay: .24s; } .rv.d3 { transition-delay: .36s; }
-
-  kbd { font: 400 12px var(--mono); padding: 1px 6px; border: 1px solid rgba(139,92,246,.4); color: var(--sand); }
-  code { font-family: var(--mono); font-size: .9em; color: var(--sand); }
+  /* reveal */
+  .rv { opacity: 0; transform: translateY(22px); filter: blur(6px); transition: opacity 1.1s cubic-bezier(.2,.7,.2,1), transform 1.1s cubic-bezier(.2,.7,.2,1), filter 1.1s; }
+  .rv.in { opacity: 1; transform: none; filter: none; }
+  .d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; } .d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; } .d5 { transition-delay: .5s; }
+  .slab.rv { transform: translateY(40px) rotateX(8deg); }
+  .slab.rv.in { transform: none; }
 
   @media (max-width: 860px) {
-    header.top { padding: 18px 20px 34px; }
-    header.top nav { display: none; }
-    .progress { display: none; }
-    .ch, .ch.wide { padding: 110px 20px 90px; }
-    .ch.right { justify-content: flex-start; }
-    .icons { grid-template-columns: 1fr 1fr; gap: 36px 26px; }
-    .panel::before { inset: -36px -24px; background: rgba(7,8,13,.58); filter: blur(22px); }
-    .ch.icons-ch .panel::before { inset: -40px -24px; background: rgba(7,8,13,.7); }
-    .label { letter-spacing: .24em; line-height: 1.6; display: block; }
-    .label::before { display: none; }
-    h1 { font-size: clamp(48px, 13vw, 64px); }
-    .caption { flex-direction: column; gap: 4px; }
+    header { padding: 22px 20px; }
+    header nav { display: none; }
+    section { padding: 90px 20px; }
+    .tiles, .split { grid-template-columns: 1fr; }
+    .tile { min-height: 0; }
+    .frame-cap { flex-direction: column; gap: 6px; }
   }
-  @media (max-width: 480px) { .icons { grid-template-columns: 1fr; } }
-  @media (prefers-reduced-motion: reduce) { .grain, .scroll-cue i { animation: none; } .rv { opacity: 1; transform: none; transition: none; } #hall { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .grain, .title, .ring .val, .slab .live i { animation: none; }
+    .ring .val { stroke-dashoffset: 30; }
+    .rv { opacity: 1; transform: none; filter: none; transition: none; }
+  }
 </style>
 </head>
 <body>
-<canvas id="hall" aria-hidden="true"></canvas>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs></svg>
+<canvas id="dust" aria-hidden="true"></canvas>
+<div class="beam" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
-<div class="vignette" aria-hidden="true"></div>
 
-<header class="top">
-  <a class="mark" href="#top"><img src="img/icon.png" alt=""><span>Tmax</span></a>
+<header>
+  <a class="brand" href="#"><img src="img/icon.png" alt="">Tmax</a>
   <nav>
-    <a href="#hall-ch">The hall</a>
-    <a href="#tools">Tools</a>
+    <a href="#features">Features</a>
     <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
     <a href="https://github.com/sreekumarkr777/tmax">GitHub</a>
   </nav>
 </header>
 
-<nav class="progress" aria-label="Chapters">
-  <a href="#top" aria-label="Intro"></a><a href="#hall-ch" aria-label="The hall"></a><a href="#tools" aria-label="Tools"></a>
-  <a href="#screen" aria-label="The screen"></a><a href="#install" aria-label="Install"></a><a href="#faq" aria-label="Questions"></a><a href="#end" aria-label="Look up"></a>
-</nav>
-
 <main>
-  <section class="ch" id="top">
-    <div class="panel">
-      <span class="label rv">A terminal for Claude Code agents</span>
-      <h1 class="rv d1">Many agents.<br><em>One quiet hall.</em></h1>
-      <p class="lede rv d2">Tmax is a free, open-source Mac terminal for running a whole team of Claude Code agents at once. See what each one is doing, answer it without switching tabs, and keep an eye on every token.</p>
-      <div class="actions rv d3">
-        <a class="btn solid" href="#install">Get Tmax</a>
-        <a class="btn" href="https://github.com/sreekumarkr777/tmax">View source</a>
-      </div>
-    </div>
-    <div class="scroll-cue"><span class="label">Walk in</span><i></i></div>
-  </section>
-
-  <section class="ch right" id="hall-ch">
-    <div class="panel">
-      <span class="label rv">I · The hall</span>
-      <h2 class="rv d1">Every agent has <em>a lamp</em> that shows its state.</h2>
-      <p class="rv d2">A normal terminal only sees text going in and out. Tmax hears from Claude Code itself, so it knows which agent is thinking, which one is stuck, and which one is waiting for you.</p>
-      <p class="rv d3">Cyan means working, amber means it needs you, green means it's done. <kbd>⌘J</kbd> takes you straight to the next agent that's waiting.</p>
-    </div>
-  </section>
-
-  <section class="ch center icons-ch" id="tools">
-    <div class="panel">
-      <span class="label rv">II · The tools</span>
-      <h2 class="rv d1">Built around agents, <em>not tabs.</em></h2>
-      <div class="icons">
-        <div class="icon rv">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 18l10-6 10 6v12l-10 6-10-6z"/><path d="M8 18l10 6 10-6M18 24v12"/><path d="M28 22l8-4 8 4v10l-8 4-8-4"/><path d="M28 22l8 4 8-4M36 26v10"/></svg>
-          <h3>A worktree each</h3><p>Every agent can get its own git worktree and branch. Tmax warns you when two of them edit the same file.</p>
+  <div class="hero">
+    <div>
+      <article class="slab rv" id="slab" aria-label="Tmax">
+        <div class="notch"></div>
+        <div class="live"><i></i><span class="tiny">3 agents</span></div>
+        <div class="slab-body">
+          <div class="kicker">Terminal, for Claude Code</div>
+          <div class="title">Tmax</div>
+          <div class="spec">
+            <div class="it">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>
+              <span><small>Agents</small><b>Many at once</b></span>
+            </div>
+            <div class="it">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+              <span><small>Approvals</small><b>No switching</b></span>
+            </div>
+            <div class="it">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>
+              <span><small>Tokens</small><b>Every one</b></span>
+            </div>
+            <svg class="ring" viewBox="0 0 44 44" role="img" aria-label="Context gauge"><circle class="track" cx="22" cy="22" r="18"/><circle class="val" cx="22" cy="22" r="18"/></svg>
+          </div>
         </div>
-        <div class="icon rv d1">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="13" cy="24" r="6"/><circle cx="13" cy="24" r="2"/><path d="M19 24h22M33 24v5M38 24v4"/></svg>
-          <h3>Approve from anywhere</h3><p>A request to run a command shows up in the sidebar with the exact command. Allow or deny it without leaving the agent you're watching.</p>
-        </div>
-        <div class="icon rv d2">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6l14 5v11c0 9-6 15-14 18-8-3-14-9-14-18V11z"/><path d="M24 17v8a4 4 0 1 0 4-4h-4"/></svg>
-          <h3>Visible safety</h3><p>The window frame turns teal, amber or red with the agent's permission mode, so you always know whether it asks first.</p>
-        </div>
-        <div class="icon rv">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 8l13 7.5v15L24 38l-13-7.5v-15z"/><circle cx="24" cy="23" r="3.5"/><circle cx="24" cy="8" r="2"/><circle cx="37" cy="15.5" r="2"/><circle cx="37" cy="30.5" r="2"/><circle cx="24" cy="38" r="2"/><circle cx="11" cy="30.5" r="2"/><circle cx="11" cy="15.5" r="2"/><path d="M24 10v9.5M35.3 16.5l-8.3 5M35.3 29.5l-8.3-5M24 36v-9.5M12.7 29.5l8.3-5M12.7 16.5l8.3 5"/></svg>
-          <h3>Mission Control</h3><p>Every agent as a live card: what it's saying, what it's running, how much it has used. One glance, the whole team.</p>
-        </div>
-        <div class="icon rv d1">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 20l18-9 18 9-18 9z"/><path d="M6 27l18 9 18-9"/><path d="M6 34l18 9 18-9" opacity=".5"/></svg>
-          <h3>Context, watched</h3><p>A gauge for how full each conversation is, with a one-click <code>/compact</code> before it runs out of room.</p>
-        </div>
-        <div class="icon rv d2">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="14" width="20" height="20" rx="1.5"/><rect x="19" y="19" width="10" height="10"/><path d="M19 14V8M24 14V8M29 14V8M19 40v-6M24 40v-6M29 40v-6M14 19H8M14 24H8M14 29H8M40 19h-6M40 24h-6M40 29h-6"/></svg>
-          <h3>Every token counted</h3><p>Tokens and estimated cost per agent and for the day. Agents stuck in a loop get flagged before they burn through your budget.</p>
+      </article>
+      <div class="hero-line">
+        <p class="rv d2">A free, open-source Mac terminal for running many Claude Code agents at once: see what each is doing, answer without switching tabs, watch every token.</p>
+        <div class="btns rv d3">
+          <a class="btn solid" href="#install">Get Tmax</a>
+          <a class="btn" href="https://github.com/sreekumarkr777/tmax">Source</a>
         </div>
       </div>
     </div>
+  </div>
+
+  <section id="features">
+    <div class="head">
+      <div><span class="tiny rv">01 — Features</span><h2 class="rv d1">Built around agents, not tabs.</h2></div>
+      <p class="rv d2">A normal terminal only sees text go in and out. Tmax hears from Claude Code itself, so it knows which agent is thinking, which is stuck, and which is waiting for you.</p>
+    </div>
+    <div class="tiles">
+      <div class="tile rv"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span class="n tiny">01</span>
+        <h3>Approve without switching</h3><p>Requests appear in the sidebar with the exact command. Allow, deny or reply without leaving the agent you're watching.</p></div>
+      <div class="tile rv d1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg><span class="n tiny">02</span>
+        <h3>Every token counted</h3><p>Tokens and estimated cost per agent and for the day, with a context gauge that offers <code>/compact</code> before it fills.</p></div>
+      <div class="tile rv d2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg><span class="n tiny">03</span>
+        <h3>Mission Control</h3><p>Every agent as a live card. <kbd>⌘J</kbd> jumps straight to the next one that needs you.</p></div>
+      <div class="tile rv"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-6 4-11.5 8"/></svg><span class="n tiny">04</span>
+        <h3>A worktree each</h3><p>Agents can work in their own git worktree and branch. Tmax warns you when two edit the same file.</p></div>
+      <div class="tile rv d1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg><span class="n tiny">05</span>
+        <h3>Visible safety</h3><p>The window frame changes colour with each agent's permission mode, so you know whether it asks first.</p></div>
+      <div class="tile rv d2"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="n tiny">06</span>
+        <h3>Catches stuck agents</h3><p>An agent repeating the same failing step is flagged with an Interrupt button before it burns your tokens.</p></div>
+    </div>
   </section>
 
-  <section class="ch wide" id="screen">
-    <div class="panel">
-      <span class="label rv">III · The screen</span>
-      <h2 class="rv d1">Still a real terminal. <em>With a view.</em></h2>
-      <p class="rv d2">Shell tabs, splits, find, ⌘-click to open files, Ctrl+R history, themes and many windows. Sessions come back after a restart, and Claude conversations resume.</p>
+  <section id="screen">
+    <div class="head">
+      <div><span class="tiny rv">02 — The app</span><h2 class="rv d1">Still a real terminal.</h2></div>
+      <p class="rv d2">Shell tabs, splits, find, ⌘-click to open files, Ctrl+R history. Sessions come back after a restart and Claude conversations resume.</p>
     </div>
-    <figure class="door rv d2">
-      <img src="img/approve.jpg" alt="Tmax: three agents in the sidebar, one asking to run a command with Allow and Deny buttons; the inspector shows context and tokens" width="2400" height="1533" loading="lazy">
+    <figure class="frame rv d1" style="margin:0">
+      <img src="img/approve.jpg" alt="Tmax with three agents; one is asking to run a command, with Allow and Deny buttons" width="2400" height="1533" loading="lazy">
     </figure>
-    <div class="caption"><span>Fig. 1 — An agent asks to run a command</span><span>Allow · Deny · or reply</span></div>
+    <div class="frame-cap"><span class="tiny">Fig. 01 — An agent asks to run a command</span><span class="tiny">Allow · Deny · Reply</span></div>
   </section>
 
-  <section class="ch" id="install">
-    <div class="panel" style="max-width:620px">
-      <span class="label rv">IV · Enter</span>
-      <h2 class="rv d1">Up and running <em>in a minute.</em></h2>
-      <div class="slab rv d2"><button class="copy-btn" type="button" data-copy="git clone https://github.com/sreekumarkr777/tmax.git&#10;cd tmax&#10;npm install&#10;npm start">Copy</button><span class="p">$ </span>git clone https://github.com/sreekumarkr777/tmax.git<br><span class="p">$ </span>cd tmax<br><span class="p">$ </span>npm install<br><span class="p">$ </span>npm start<br><span class="c"># or double-click Tmax.app in the folder</span></div>
-      <ul class="needs rv d3">
-        <li>macOS, Apple silicon or Intel</li>
-        <li>Node.js 18 or newer</li>
-        <li>Claude Code, installed and signed in</li>
-      </ul>
+  <section id="install">
+    <div class="head">
+      <div><span class="tiny rv">03 — Install</span><h2 class="rv d1">Running in a minute.</h2></div>
+      <p class="rv d2">From source for now. A signed Mac download is on the way.</p>
     </div>
-  </section>
-
-  <section class="ch right" id="faq">
-    <div class="panel" style="max-width:600px">
-      <span class="label rv">V · Questions</span>
-      <h2 class="rv d1">Before you <em>step in.</em></h2>
-      <div class="faq rv d2">
-        <details><summary>Is this made by Anthropic?</summary><p>No. Tmax is an independent open-source project built on top of Claude Code. It isn't affiliated with or endorsed by Anthropic.</p></details>
-        <details><summary>Does it send my code anywhere?</summary><p>No. Claude Code reports its activity to Tmax over localhost on your own Mac. There's no server, no account and no analytics.</p></details>
-        <details><summary>Is the cost figure what I pay?</summary><p>It's the cost at Anthropic API list prices. On a Claude plan, treat it as the value you've used, not a bill.</p></details>
-        <details><summary>Windows or Linux?</summary><p>Not yet. It's an Electron app, so it's mostly portable, and contributions are welcome.</p></details>
+    <div class="split">
+      <div class="code rv"><button class="copy" type="button" data-copy="git clone https://github.com/sreekumarkr777/tmax.git&#10;cd tmax&#10;npm install&#10;npm start">Copy</button><span class="p">$ </span>git clone https://github.com/sreekumarkr777/tmax.git<br><span class="p">$ </span>cd tmax<br><span class="p">$ </span>npm install<br><span class="p">$ </span>npm start</div>
+      <div class="reqs rv d1">
+        <div><span class="tiny">System</span><b>macOS · Apple silicon or Intel</b></div>
+        <div><span class="tiny">Runtime</span><b>Node.js 18+</b></div>
+        <div><span class="tiny">Agent</span><b>Claude Code, signed in</b></div>
+        <div><span class="tiny">Licence</span><b>MIT</b></div>
       </div>
     </div>
   </section>
 
-  <section class="ch center" id="end" style="min-height:120vh">
-    <div class="panel">
-      <span class="label rv">VI · Look up</span>
-      <h2 class="rv d1" style="font-size:clamp(44px,6.4vw,96px)">Max out your agents,<br><em>not your attention.</em></h2>
-      <div class="actions rv d2">
-        <a class="btn solid" href="#install">Get Tmax</a>
-        <a class="btn" href="https://github.com/sreekumarkr777/tmax">Star on GitHub</a>
-      </div>
+  <section id="faq" class="faq">
+    <div class="head"><div><span class="tiny rv">04 — Questions</span><h2 class="rv d1">Before you start.</h2></div></div>
+    <div class="rv d2">
+      <details><summary>Is this made by Anthropic?</summary><p>No. Tmax is an independent open-source project built on top of Claude Code. It isn't affiliated with or endorsed by Anthropic.</p></details>
+      <details><summary>Does it send my code anywhere?</summary><p>No. Claude Code reports its activity to Tmax over localhost on your own Mac. There's no server, no account and no analytics.</p></details>
+      <details><summary>Is the cost figure what I pay?</summary><p>It's the cost at Anthropic API list prices. On a Claude plan, treat it as the value you've used, not a bill.</p></details>
+      <details><summary>Windows or Linux?</summary><p>Not yet. It's an Electron app, so it's mostly portable, and contributions are welcome.</p></details>
     </div>
   </section>
+
+  <div class="end">
+    <span class="tiny rv">05 — Begin</span>
+    <h2 class="rv d1">Max out your agents,<br>not your attention.</h2>
+    <div class="btns rv d2">
+      <a class="btn solid" href="#install">Get Tmax</a>
+      <a class="btn" href="https://github.com/sreekumarkr777/tmax">Star on GitHub</a>
+    </div>
+  </div>
 </main>
 
 <footer>
@@ -281,20 +281,36 @@
   <span>Not affiliated with Anthropic. Claude and Claude Code are trademarks of Anthropic.</span>
 </footer>
 
-<script type="module" src="js/scene.js"></script>
+<script type="module" src="js/dust.js"></script>
 <script>
-  // reveal text as it comes into view, and light the chapter marker
-  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in'); }), { threshold: 0.2 });
+  // reveal as things come into view
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15 });
   document.querySelectorAll('.rv').forEach((el) => io.observe(el));
-  const dots = [...document.querySelectorAll('.progress a')];
-  const chs = dots.map((d) => document.querySelector(d.getAttribute('href')));
-  const mark = () => {
-    const mid = innerHeight / 2;
-    let on = 0;
-    chs.forEach((c, i) => { if (c && c.getBoundingClientRect().top < mid) on = i; });
-    dots.forEach((d, i) => d.classList.toggle('on', i === on));
-  };
-  addEventListener('scroll', mark, { passive: true }); mark();
+  // the screenshot gains its colour when it's in the middle of the screen
+  const frame = document.querySelector('.frame');
+  new IntersectionObserver(([e]) => frame.classList.toggle('in-view', e.isIntersecting), { rootMargin: '-35% 0px -35% 0px' }).observe(frame);
+  // slab tilts toward the cursor and catches the light
+  const slab = document.getElementById('slab');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!still) {
+    addEventListener('pointermove', (e) => {
+      if (!slab.classList.contains('in')) return;
+      const r = slab.getBoundingClientRect();
+      const x = (e.clientX - (r.left + r.width / 2)) / innerWidth;
+      const y = (e.clientY - (r.top + r.height / 2)) / innerHeight;
+      slab.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 10}deg)`;
+      slab.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
+      slab.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
+      slab.style.setProperty('--sheen', '1');
+    }, { passive: true });
+    document.addEventListener('pointerleave', () => { slab.style.transform = ''; slab.style.setProperty('--sheen', '0'); });
+  }
+  // light on the tiles follows the cursor
+  document.querySelectorAll('.tile').forEach((t) => t.addEventListener('pointermove', (e) => {
+    const r = t.getBoundingClientRect();
+    t.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    t.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }));
   document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch {}
   }));
