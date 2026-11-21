@@ -48,6 +48,10 @@ module.exports = async function smoke({ app, win, createAgentSession, handleHook
   await win.webContents.executeJavaScript(`window.__sbSelect(${JSON.stringify(a.id)})`);
   await wait(800);
   fs.writeFileSync(path.join(out, '1-session.png'), (await win.capturePage()).toPNG());
+  await win.webContents.executeJavaScript(`window.__sbUsage && window.__sbUsage(${JSON.stringify({ [a.id]: [2400000, 1.84], [b.id]: [610000, 0.42], [c.id]: [5100000, 3.9] })})`);
+  await win.webContents.executeJavaScript(`window.__sbSelect(${JSON.stringify(b.id)})`);
+  await wait(800);
+  fs.writeFileSync(path.join(out, '1b-ask.png'), (await win.capturePage()).toPNG());
   await win.webContents.executeJavaScript(`window.__sbMission()`);
   await wait(600);
   fs.writeFileSync(path.join(out, '2-mission.png'), (await win.capturePage()).toPNG());

@@ -11,9 +11,10 @@
 <div id="app" class="safety-default">
 
   <header id="titlebar">
-    <div class="brand" title="Tmax — TokenMax">Tmax</div>
+    <div class="brand" title="Tmax — TokenMax"><svg class="brand-mark" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="bm" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8B5CF6"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs><path d="M4 6l5 6-5 6" fill="none" stroke="url(#bm)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="12" y="14" width="2.6" height="4" rx="1" fill="#8B5CF6"/><rect x="15.7" y="11" width="2.6" height="7" rx="1" fill="#6F7CF8"/><rect x="19.4" y="6" width="2.6" height="12" rx="1" fill="url(#bm)"/></svg><span>Tmax</span></div>
     <div id="crumb" class="crumb"></div>
     <div class="spacer"></div>
+    <div id="spend" class="spend" hidden></div>
     <div id="safety" class="safety-pill" hidden></div>
     <button id="btn-voice" class="icon-btn" title="Spoken alerts (off)" aria-label="Toggle spoken alerts" aria-pressed="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
@@ -79,7 +80,21 @@
       </div>
     </main>
 
-    <aside id="inspector" aria-label="Session inspector"></aside>
+    <aside id="inspector" aria-label="Session inspector">
+      <div id="insp-actions" hidden>
+        <div id="insp-alerts"></div>
+        <div class="reply">
+          <label for="reply-q" id="reply-for">Reply</label>
+          <div class="reply-row">
+            <textarea id="reply-q" rows="1" spellcheck="false" placeholder="Reply…"></textarea>
+            <button id="reply-send" class="reply-send" title="Send (↵) · ⇧↵ for a new line" aria-label="Send">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="insp-body"></div>
+    </aside>
   </div>
 
   <dialog id="new-dialog">
@@ -145,7 +160,9 @@
         <label class="field"><span>Text size</span><input id="s-fontSize" type="number" min="9" max="28" step="1"></label>
         <label class="field"><span>Line spacing</span><input id="s-lineHeight" type="number" min="1" max="2" step="0.05"></label>
         <label class="field"><span>Colours</span>
-          <select id="s-theme"><option value="midnight">Midnight (dark)</option><option value="paper">Paper (light)</option><option value="contrast">High contrast</option></select></label>
+          <select id="s-theme"><option value="midnight">Nebula (dark)</option><option value="paper">Paper (light)</option><option value="contrast">High contrast</option></select></label>
+        <label class="field"><span>See-through window</span>
+          <select id="s-glass"><option value="off">Off (solid)</option><option value="subtle">Subtle</option><option value="medium">Medium</option><option value="strong">Strong</option></select></label>
         <label class="field"><span>Cursor</span>
           <select id="s-cursorStyle"><option value="block">Block</option><option value="bar">Bar</option><option value="underline">Underline</option></select></label>
         <label class="field"><span>Scrollback lines</span><input id="s-scrollback" type="number" min="1000" max="200000" step="1000"></label>

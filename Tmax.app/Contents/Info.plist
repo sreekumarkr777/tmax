@@ -2,12 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Tmax</string>
-  <key>CFBundleDisplayName</key><string>Tmax</string>
-  <key>CFBundleIdentifier</key><string>dev.tmax.launcher</string>
-  <key>CFBundleExecutable</key><string>launch</string>
-  <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>0.1.0</string>
-  <key>LSUIElement</key><true/>
+	<key>CFBundleDisplayName</key>
+	<string>Tmax</string>
+	<key>CFBundleExecutable</key>
+	<string>launch</string>
+	<key>CFBundleIconFile</key>
+	<string>tmax</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.tmax.launcher</string>
+	<key>CFBundleName</key>
+	<string>Tmax</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleVersion</key>
+	<string>0.1.0</string>
+	<key>LSUIElement</key>
+	<true/>
 </dict>
 </plist>

@@ -53,3 +53,23 @@ assert.ok(Array.isArray(snap.files));
 JSON.stringify(snap);
 
 console.log('state tests passed');
+
+// ---- pending permission + stuck detection ----
+{
+  const p = createSession({ id: 'p', name: 'perm', cwd: '/r' });
+  applyHook(p, { hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'git push' } });
+  assert.equal(p.pending.detail, 'git push');
+  assert.equal(p.pending.tool, 'Bash');
+  applyHook(p, { hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'git push' } });
+  assert.equal(p.pending, null, 'answering the prompt clears it');
+
+  for (let i = 0; i < 3; i++) applyHook(p, { hook_event_name: 'PostToolUseFailure', tool_name: 'Bash', tool_input: { command: 'npm test' } });
+  assert.match(p.stuck, /3 failures in a row/);
+  applyHook(p, { hook_event_name: 'PostToolUse', tool_name: 'Read', tool_input: { file_path: '/r/a' } });
+  assert.equal(p.stuck, null, 'a success clears it');
+  for (let i = 0; i < 5; i++) applyHook(p, { hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'sleep 1' } });
+  assert.match(p.stuck, /same thing 5×/);
+  applyHook(p, { hook_event_name: 'UserPromptSubmit', prompt: 'stop' });
+  assert.equal(p.stuck, null);
+}
+console.log('pending/stuck tests passed');

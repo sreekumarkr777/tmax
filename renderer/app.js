@@ -22,19 +22,19 @@
     bypassPermissions: { text: 'Bypass · no prompts', cls: 'danger' },
   };
   const TICK_COLOR = {
-    read: '#8A8F98', edit: '#F2A93B', shell: '#6AA8FF', agent: '#B69CFF', ask: '#FFE08A',
-    fail: '#FF7A6B', user: '#E8E6E1', stop: '#5CC8A8', mcp: '#6B7A8F', web: '#6B7A8F', other: '#6B7A8F',
+    read: '#6D7091', edit: '#F5B544', shell: '#7C8CFF', agent: '#A78BFA', ask: '#FFE08A',
+    fail: '#FF6B81', user: '#22D3EE', stop: '#34D399', mcp: '#6B7A8F', web: '#6B7A8F', other: '#6B7A8F',
   };
   const TICK_H = { edit: 16, agent: 14, ask: 18, fail: 14, user: 18, stop: 12 };
 
   const THEMES = {
     midnight: {
-      background: '#0D0E11', foreground: '#E8E6E1', cursor: '#E8E6E1', cursorAccent: '#0D0E11',
-      selectionBackground: '#33405A',
-      black: '#1C1F24', red: '#FF7A6B', green: '#5CC8A8', yellow: '#F2A93B', blue: '#6AA8FF',
-      magenta: '#B69CFF', cyan: '#7FD4E0', white: '#C9CBD0',
-      brightBlack: '#5E626B', brightRed: '#FF9C90', brightGreen: '#7FDCC0', brightYellow: '#F5C477',
-      brightBlue: '#9EC3FF', brightMagenta: '#D9CCFF', brightCyan: '#A8E6EF', brightWhite: '#F4F2EE',
+      background: '#0A0B12', foreground: '#E6E5F2', cursor: '#22D3EE', cursorAccent: '#0A0B12',
+      selectionBackground: '#2E2A5C',
+      black: '#171930', red: '#FF6B81', green: '#34D399', yellow: '#F5B544', blue: '#7C8CFF',
+      magenta: '#A78BFA', cyan: '#22D3EE', white: '#C6C7DA',
+      brightBlack: '#565A80', brightRed: '#FF94A5', brightGreen: '#6EE7B7', brightYellow: '#F8D08A',
+      brightBlue: '#A5B0FF', brightMagenta: '#C4B5FD', brightCyan: '#7DE6F5', brightWhite: '#F4F3FB',
     },
     paper: {
       background: '#FBFAF7', foreground: '#23262C', cursor: '#23262C', cursorAccent: '#FBFAF7',
@@ -66,7 +66,7 @@
   };
   let settings = {
     fontFamily: 'JetBrains Mono', fontSize: 13, lineHeight: 1.2, theme: 'midnight', cursorStyle: 'block',
-    cursorBlink: true, optionAsMeta: false, scrollback: 20000, copyOnSelect: false, bell: 'visual', editor: 'auto', restore: true,
+    cursorBlink: true, optionAsMeta: false, scrollback: 20000, copyOnSelect: false, bell: 'visual', editor: 'auto', restore: true, glass: 'medium',
   };
 
   // ---------- utils ----------
@@ -82,13 +82,31 @@
     if (s.repoKey && /\/\.git\/?$/.test(s.repoKey)) return s.repoKey.replace(/\/\.git\/?$/, '').split('/').pop();
     return String(s.root || s.cwd).split('/').filter(Boolean).pop() || '';
   }
-  function fmtTokens(n) { return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n); }
+  function fmtTokens(n) { return n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n); }
+  const fmtCost = (c) => (c >= 100 ? `$${Math.round(c)}` : c >= 1 ? `$${c.toFixed(2)}` : `$${c.toFixed(3)}`);
+  const totalTokens = (u) => u ? u.input + u.output + u.cacheRead + u.cacheWrite : 0;
+  function todayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
   function ctxInfo(s) {
     if (!s.context) return null;
     const used = s.context.used;
     const win = used > 200000 || /\[1m\]/i.test(s.context.model || '') ? 1000000 : 200000;
     const pct = Math.min(100, Math.round((used / win) * 100));
     return { used, win, pct, cls: pct >= 85 ? 'crit' : pct >= 65 ? 'hot' : '' };
+  }
+  // How see-through the window is (1 = solid). The terminal stays a little more solid than the chrome.
+  const GLASS = { off: 1, subtle: 0.9, medium: 0.8, strong: 0.62 };
+  function hexRgba(hex, a) {
+    const n = parseInt(hex.replace('#', ''), 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  }
+  function applyGlass() {
+    const a = GLASS[settings.glass] ?? GLASS.medium;
+    const root = document.documentElement;
+    root.style.setProperty('--glass', String(a));
+    root.classList.toggle('glass', a < 1);
+    const bg = (THEMES[settings.theme] || THEMES.midnight).background;
+    const light = settings.theme === 'paper';
+    $('#stage').style.background = a >= 1 ? bg : hexRgba(bg, light ? Math.max(0.92, a) : Math.min(0.9, a * 0.5 + 0.1));
   }
   const isPlain = (s) => s && (s.kind === 'shell' || s.status === 'exited' || s.status === 'shell');
   const fontStack = (f) => `"${f}", "SF Mono", Menlo, monospace`;
@@ -105,7 +123,9 @@
       fontFamily: fontStack(settings.fontFamily), fontSize: settings.fontSize, lineHeight: settings.lineHeight,
       cursorBlink: settings.cursorBlink, cursorStyle: settings.cursorStyle, scrollback: settings.scrollback,
       macOptionIsMeta: !!settings.optionAsMeta, macOptionClickForcesSelection: true,
-      theme: THEMES[settings.theme] || THEMES.midnight,
+      allowTransparency: true,
+      // the stage behind the terminal paints the background, so the glass effect shows through
+      theme: { ...(THEMES[settings.theme] || THEMES.midnight), background: 'rgba(0,0,0,0)' },
     };
   }
 
@@ -189,8 +209,7 @@
     for (const t of state.terms.values()) {
       for (const [k, v] of Object.entries(o)) t.term.options[k] = v;
     }
-    const bg = (THEMES[settings.theme] || THEMES.midnight).background;
-    $('#stage').style.background = bg;
+    applyGlass();
     fitVisible();
   }
 
@@ -391,8 +410,8 @@
     // crumb
     $('#crumb').innerHTML = active
       ? (isPlain(active)
-        ? `<b>${esc(active.name)}</b> <span style="color:#5E626B">·</span> ${esc(home(active.cwdNow || active.cwd))}`
-        : `${esc(projectName(active))} <span style="color:#5E626B">/</span> <b>${esc(active.name)}</b>${active.branch ? ` <span style="color:#5E626B">⎇</span> ${esc(active.branch)}` : ''}`)
+        ? `<b>${esc(active.name)}</b> <span style="color:#4E5170">·</span> ${esc(home(active.cwdNow || active.cwd))}`
+        : `${esc(projectName(active))} <span style="color:#4E5170">/</span> <b>${esc(active.name)}</b>${active.branch ? ` <span style="color:#4E5170">⎇</span> ${esc(active.branch)}` : ''}`)
       : '';
 
     // next button
@@ -403,6 +422,19 @@
     $('#btn-next').classList.toggle('hot', waiting > 0);
     $('#btn-mission').classList.toggle('active', state.view === 'mission');
 
+    // today's spend across every session
+    const tk = todayKey();
+    let dayTok = 0, dayCost = 0, allCost = 0;
+    for (const s of all) {
+      const d = s.usage && s.usage.days && s.usage.days[tk];
+      if (d) { dayTok += d.tokens; dayCost += d.cost; }
+      if (s.usage) allCost += s.usage.cost;
+    }
+    const spend = $('#spend');
+    spend.hidden = !dayTok;
+    spend.innerHTML = `<span class="sp-k">today</span><b>${fmtTokens(dayTok)}</b><span class="sp-k">tokens</span><b class="sp-cost">≈ ${fmtCost(dayCost)}</b>`;
+    spend.title = `Tokens used today by these sessions, priced at Anthropic API list rates (on a Claude plan this is the value used, not a bill). All-time for open sessions: ${fmtCost(allCost)}.`;
+
     // sidebar
     const shown = state.view === 'session' ? shownIds() : [];
     $('#side-count').textContent = all.length;
@@ -410,7 +442,9 @@
       const st = STATUS[s.status] || STATUS.starting;
       const plain = isPlain(s);
       let badge = '';
-      if (s.status === 'waiting' || s.status === 'done' || s.status === 'error') badge = `<span class="badge ${st.badge}">${st.label.toLowerCase()}</span>`;
+      if (!plain && s.loginNeeded) badge = '<span class="badge error">sign in</span>';
+      else if (!plain && s.stuck && s.status === 'working') badge = '<span class="badge error">stuck?</span>';
+      else if (s.status === 'waiting' || s.status === 'done' || s.status === 'error') badge = `<span class="badge ${st.badge}">${st.label.toLowerCase()}</span>`;
       else if (s.attention === 'finished') badge = '<span class="badge done">finished</span>';
       else if (s.attention === 'bell') badge = '<span class="badge waiting">bell</span>';
       else badge = `<span class="s-num">⌘${i + 1}</span>`;
@@ -418,7 +452,9 @@
       return `<div class="s-item ${cls}" data-id="${s.id}" role="button" tabindex="0" title="${esc(home(s.cwdNow || s.cwd))} · double-click to rename">
         <div class="s-top"><span class="dot ${plain ? 'shell' : s.status}${plain && s.command ? ' busy' : ''}"></span><span class="s-name">${esc(s.name)}</span>${badge}<button class="s-edit" data-rename="${s.id}" title="Rename (⌘⇧E)" aria-label="Rename ${esc(s.name)}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>
         ${!plain && s.branch ? `<div class="s-branch">⎇ ${esc(s.branch)}</div>` : ''}
-        <div class="s-act">${esc(subtitle(s))}</div></div>`;
+        <div class="s-act">${esc(subtitle(s))}</div>
+        ${!plain && s.pending && s.status === 'waiting' ? `<div class="s-ask">${s.pending.detail ? `<div class="s-ask-d mono">${esc(s.pending.detail.slice(0, 140))}</div>` : ''}<div class="s-ask-b"><button class="mini ok" data-allow="${s.id}" title="Allow (sends Enter to Claude's prompt)">Allow</button><button class="mini no" data-deny="${s.id}" title="Deny (sends Esc)">Deny</button></div></div>` : ''}
+        ${!plain && (s.usage || s.context) ? meterRow(s) : ''}</div>`;
     }).join('');
 
     // stage
@@ -432,6 +468,39 @@
     renderInspector(active, cols);
   }
 
+  function meterRow(s) {
+    const ctx = ctxInfo(s);
+    return `<div class="s-meter"><span class="bar ${ctx ? ctx.cls : ''}" title="Context ${ctx ? ctx.pct + '% full' : 'unknown'}"><div style="width:${ctx ? ctx.pct : 0}%"></div></span>
+      <span>${ctx ? ctx.pct + '%' : ''}</span><span class="s-tok">${s.usage ? fmtTokens(totalTokens(s.usage)) + ' · ' + fmtCost(s.usage.cost) : ''}</span></div>`;
+  }
+
+  // The panel at the top of the inspector: what the agent needs from you, and a reply box.
+  // Built once and updated in place so typing in the box survives live updates.
+  function renderActions(s) {
+    const box = $('#insp-actions');
+    const agent = s && !isPlain(s);
+    box.hidden = !agent;
+    if (!agent) return;
+    const ctx = ctxInfo(s);
+    const parts = [];
+    if (s.loginNeeded) parts.push(`<div class="act-card danger"><div class="act-h">Claude’s login expired</div><div class="act-p">Sign in again to keep this agent working.</div><div class="act-b"><button class="mini ok" data-cmd="/login">Sign in (/login)</button></div></div>`);
+    if (s.pending && s.status === 'waiting') {
+      parts.push(`<div class="act-card ask"><div class="act-h">${esc(s.name)} wants to ${s.pending.tool === 'Bash' ? 'run' : 'use'}</div>
+        <div class="act-d mono">${esc(s.pending.detail || s.pending.label)}</div>
+        <div class="act-b"><button class="mini ok" data-allow="${s.id}">Allow</button><button class="mini no" data-deny="${s.id}">Deny</button><span class="act-hint">or answer in the terminal for more choices</span></div></div>`);
+    }
+    if (s.stuck && s.status === 'working') parts.push(`<div class="act-card warn"><div class="act-h">Looks stuck</div><div class="act-p">${esc(s.stuck)}</div><div class="act-b"><button class="mini no" data-interrupt="${s.id}">Interrupt (Esc)</button></div></div>`);
+    if (ctx && ctx.pct >= 80) parts.push(`<div class="act-card warn"><div class="act-h">Context ${ctx.pct}% full</div><div class="act-p">Compact now to keep the important parts and free up room.</div><div class="act-b"><button class="mini" data-cmd="/compact">Compact</button></div></div>`);
+    const html = parts.join('');
+    const alerts = $('#insp-alerts');
+    if (alerts.dataset.html !== html) { alerts.innerHTML = html; alerts.dataset.html = html; }
+    const ta = $('#reply-q');
+    const dead = s.status === 'exited';
+    ta.disabled = dead;
+    ta.placeholder = dead ? 'Claude has exited' : s.status === 'working' ? 'Runs when it’s free…' : 'Message the agent…';
+    $('#reply-for').textContent = s.status === 'working' ? 'Queue a message' : s.status === 'waiting' ? 'Answer' : 'Reply';
+  }
+
   function renderTimeline(s) {
     const track = $('#tl-track');
     if (!s) { track.innerHTML = ''; return; }
@@ -443,7 +512,8 @@
   }
 
   function renderInspector(s, cols) {
-    const el = $('#inspector');
+    renderActions(s);
+    const el = $('#insp-body');
     if (!s) {
       el.innerHTML = `<div class="sec"><h3>Inspector</h3><div class="insp-empty">Start an agent to see its status, context use, files and activity here.</div></div>`;
       return;
@@ -451,7 +521,7 @@
     const sessionSec = `
       <section class="sec">
         <h3>Session</h3>
-        <div class="status-act mono" style="font-size:11px;color:#9A9DA4">${esc(home(s.cwdNow || s.cwd))}${s.worktree ? '<br>worktree · ' + esc(s.branch || '') : ''}</div>
+        <div class="status-act mono" style="font-size:11px;color:#8E91AB">${esc(home(s.cwdNow || s.cwd))}${s.worktree ? '<br>worktree · ' + esc(s.branch || '') : ''}</div>
         <div class="actions-row" style="margin-top:10px">
           <button class="ghost-btn" data-act="reveal">Open folder</button>
           <button class="ghost-btn" data-act="shell-here">Shell here</button>
@@ -494,10 +564,22 @@
           : `<div class="insp-empty">Shows up after Claude’s first reply.</div>`}
       </section>
 
+      ${s.usage ? `<section class="sec">
+        <h3>Tokens <span>${esc((s.usage.model || '').replace(/^claude-/, ''))}</span></h3>
+        <div class="tok-row"><div class="big">${fmtTokens(totalTokens(s.usage))}</div><div class="tok-cost" title="At Anthropic API list prices. On a Claude plan this is the value used, not what you pay.">≈ ${fmtCost(s.usage.cost)}</div></div>
+        <div class="tok-grid">
+          <span>input</span><b>${fmtTokens(s.usage.input)}</b>
+          <span>output</span><b>${fmtTokens(s.usage.output)}</b>
+          <span>cache read</span><b>${fmtTokens(s.usage.cacheRead)}</b>
+          <span>cache write</span><b>${fmtTokens(s.usage.cacheWrite)}</b>
+        </div>
+        <div class="status-act">${s.usage.replies} replies · ${s.usage.cacheRead ? Math.round((s.usage.cacheRead / Math.max(1, s.usage.input + s.usage.cacheRead + s.usage.cacheWrite)) * 100) : 0}% of input served from cache</div>
+      </section>` : ''}
+
       <section class="sec">
         <div class="stats">
           <div class="stat"><b>${s.toolCount}</b><span>tool calls</span></div>
-          <div class="stat"><b>${s.subagentsActive}<span style="font-size:12px;color:#858993"> / ${s.subagentsTotal}</span></b><span>subagents</span></div>
+          <div class="stat"><b>${s.subagentsActive}<span style="font-size:12px;color:#6D7091"> / ${s.subagentsTotal}</span></b><span>subagents</span></div>
           <div class="stat"><b>${s.files.filter((f) => f.writes).length}</b><span>files edited</span></div>
         </div>
       </section>
@@ -529,15 +611,15 @@
     $('#mission-grid').innerHTML = all.map((s) => {
       const st = STATUS[s.status] || STATUS.starting;
       if (isPlain(s)) {
-        return `<button class="card" data-id="${s.id}">
+        return `<div class="card" role="button" tabindex="0" data-id="${s.id}">
           <div class="card-top"><span class="dot shell${s.command ? ' busy' : ''}"></span><span class="card-name">${esc(s.name)}</span><span class="badge exited">shell</span></div>
           <div class="card-branch">${esc(home(s.cwdNow || s.cwd))}</div>
           <div class="card-say">${esc(s.command ? 'Running ' + s.command : 'Idle')}</div>
-          <div class="card-tool">${esc(s.command ? '▸ ' + s.command : '$ _')}</div></button>`;
+          <div class="card-tool">${esc(s.command ? '▸ ' + s.command : '$ _')}</div></div>`;
       }
       const ctx = ctxInfo(s);
       const say = s.status === 'done' && s.lastMessage ? s.lastMessage : s.activity;
-      return `<button class="card ${s.status}" data-id="${s.id}">
+      return `<div class="card ${s.status}" role="button" tabindex="0" data-id="${s.id}">
         <div class="card-top"><span class="dot ${s.status}"></span><span class="card-name">${esc(s.name)}</span><span class="badge ${st.badge}">${st.label.toLowerCase()}</span></div>
         <div class="card-branch">${s.branch ? '⎇ ' + esc(s.branch) + ' · ' : ''}${ago(s.createdAt)}</div>
         <div class="card-say">${esc(say)}</div>
@@ -546,7 +628,11 @@
           <span style="display:flex;align-items:center;gap:6px">context <span class="bar ${ctx ? ctx.cls : ''}"><div style="width:${ctx ? ctx.pct : 0}%"></div></span> ${ctx ? ctx.pct + '%' : '—'}</span>
           <span>${s.toolCount} tools</span>
           ${s.subagentsActive ? `<span>${s.subagentsActive} subagent${s.subagentsActive > 1 ? 's' : ''}</span>` : ''}
-        </div></button>`;
+          ${s.usage ? `<span class="card-cost">${fmtTokens(totalTokens(s.usage))} · ${fmtCost(s.usage.cost)}</span>` : ''}
+        </div>
+        ${s.pending && s.status === 'waiting' ? `<div class="card-ask"><span class="mono">${esc((s.pending.detail || s.pending.label).slice(0, 120))}</span><button class="mini ok" data-allow="${s.id}">Allow</button><button class="mini no" data-deny="${s.id}">Deny</button></div>` : ''}
+        ${s.loginNeeded ? `<div class="card-ask"><span>Login expired</span><button class="mini ok" data-cmd-for="${s.id}" data-cmd="/login">Sign in</button></div>` : ''}
+        </div>`;
     }).join('') + `<button class="card card-new" data-act="new">+ New agent session</button>`;
   }
 
@@ -647,7 +733,26 @@
   });
 
   // ---------- events ----------
+  // Allow / Deny / interrupt / slash commands from anywhere in the UI
+  async function answer(id, action) {
+    const ok = await sb.answer(id, action);
+    if (!ok) select(id); // the prompt isn't up any more (or never was): show the terminal
+  }
+  function handleQuickAction(e) {
+    const a = e.target.closest('[data-allow],[data-deny],[data-interrupt],[data-cmd]');
+    if (!a) return false;
+    e.stopPropagation();
+    if (a.dataset.allow) answer(a.dataset.allow, 'allow');
+    else if (a.dataset.deny) answer(a.dataset.deny, 'deny');
+    else if (a.dataset.interrupt) sb.write(a.dataset.interrupt, '\x1b');
+    else if (a.dataset.cmd) {
+      const id = a.dataset.cmdFor || state.activeId;
+      if (id) { sb.reply(id, a.dataset.cmd); select(id); }
+    }
+    return true;
+  }
   $('#session-list').addEventListener('click', (e) => {
+    if (handleQuickAction(e)) return;
     const r = e.target.closest('[data-rename]');
     if (r) { e.stopPropagation(); renameSession(r.dataset.rename); return; }
     if (e.target.closest('.rename-input')) return;
@@ -661,9 +766,27 @@
     const b = e.target.closest('.s-item'); if (b) renameSession(b.dataset.id);
   });
   $('#mission-grid').addEventListener('click', (e) => {
+    if (handleQuickAction(e)) return;
     const c = e.target.closest('.card'); if (!c) return;
     if (c.dataset.act === 'new') quickStart(); else select(c.dataset.id);
   });
+  $('#mission-grid').addEventListener('keydown', (e) => {
+    const c = e.target.closest('.card');
+    if (c && e.target === c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (c.dataset.act === 'new') quickStart(); else select(c.dataset.id); }
+  });
+  $('#insp-actions').addEventListener('click', (e) => { handleQuickAction(e); });
+  async function sendReply() {
+    const ta = $('#reply-q');
+    const text = ta.value.trim();
+    if (!text || !state.activeId) return;
+    if (await sb.reply(state.activeId, text)) { ta.value = ''; ta.style.height = ''; }
+  }
+  $('#reply-q').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendReply(); }
+    if (e.key === 'Escape') { const t = state.terms.get(state.activeId); if (t) t.term.focus(); }
+  });
+  $('#reply-q').addEventListener('input', (e) => { const ta = e.target; ta.style.height = ''; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; });
+  $('#reply-send').addEventListener('click', sendReply);
   $('#inspector').addEventListener('click', (e) => {
     const f = e.target.closest('[data-open]');
     if (f) { sb.openPath(f.dataset.open, 0, 0); return; }
@@ -863,7 +986,7 @@
 
   // ---------- settings ----------
   const sdlg = $('#settings-dialog');
-  const SKEYS = ['fontFamily', 'fontSize', 'lineHeight', 'theme', 'cursorStyle', 'scrollback', 'optionAsMeta', 'bell', 'editor', 'cursorBlink', 'copyOnSelect', 'restore'];
+  const SKEYS = ['fontFamily', 'fontSize', 'lineHeight', 'theme', 'glass', 'cursorStyle', 'scrollback', 'optionAsMeta', 'bell', 'editor', 'cursorBlink', 'copyOnSelect', 'restore'];
   function openSettings() {
     for (const k of SKEYS) {
       const el = $(`#s-${k}`);
@@ -1064,6 +1187,7 @@
   window.__sbSerialize = serializeAll;
   window.__sbText = (id) => { const t = state.terms.get(id); return t ? bufferLines(t.term, 400).map((l) => l.text).join('\n') : ''; };
   window.__sbState = () => ({ order: state.order, activeId: state.activeId, split: state.split, view: state.view });
+  window.__sbUsage = (map) => { const tk = todayKey(); for (const [id, [tok, cost]] of Object.entries(map)) { const s = state.sessions.get(id); if (s) s.usage = { input: tok * 0.01, output: tok * 0.04, cacheRead: tok * 0.85, cacheWrite: tok * 0.1, cost, replies: 42, model: 'claude-opus-5-5', days: { [tk]: { tokens: tok, cost } } }; } renderAll(); };
   window.__sbCtx = (map) => { for (const [id, used] of Object.entries(map)) { const s = state.sessions.get(id); if (s) s.context = { used }; } renderAll(); };
 
   // refresh relative times

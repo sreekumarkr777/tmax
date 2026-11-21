@@ -68,6 +68,12 @@ function createSession({ id, name, cwd, branch = null, worktree = null, prompt =
     events: [],               // { t, kind, label }
     lastMessage: '',
     context: null,            // { used, window }
+    usage: null,              // tokens + cost so far (src/usage.js)
+    pending: null,            // permission Claude is asking for: { label, detail, tool, t }
+    stuck: null,              // why it looks stuck (same failure again and again), or null
+    failStreak: 0,
+    repeat: { label: '', n: 0 },
+    loginNeeded: false,       // Claude said its login expired
     exitCode: null,
   };
 }
@@ -97,6 +103,22 @@ function touchFile(s, filePath, kind) {
  * (e.g. { n: 'permission' } for Notification matchers).
  * Returns { prev, next } statuses so callers can react to transitions.
  */
+function permissionDetail(name, input = {}) {
+  input = input || {};
+  if (name === 'Bash') return String(input.command || '');
+  if (input.file_path) return String(input.file_path);
+  if (input.url) return String(input.url);
+  try { const j = JSON.stringify(input); return j === '{}' ? '' : j; } catch { return ''; }
+}
+
+function noteToolResult(s, label, failed) {
+  if (failed) s.failStreak++; else s.failStreak = 0;
+  if (s.repeat.label === label) s.repeat.n++; else s.repeat = { label, n: 1 };
+  if (s.failStreak >= 3) s.stuck = `${s.failStreak} failures in a row — last: ${label}`;
+  else if (s.repeat.n >= 5) s.stuck = `Ran the same thing ${s.repeat.n}× in a row: ${label}`;
+  else s.stuck = null;
+}
+
 function applyHook(s, ev, extra = {}) {
   const prev = s.status;
   const name = ev.hook_event_name || extra.e;
@@ -107,6 +129,8 @@ function applyHook(s, ev, extra = {}) {
 
   switch (name) {
     case 'UserPromptSubmit':
+      s.loginNeeded = false;
+      s.stuck = null; s.failStreak = 0; s.repeat = { label: '', n: 0 };
       setStatus(s, 'working', 'Thinking…');
       pushEvent(s, 'user', short(ev.prompt, 60) || 'Prompt');
       break;
@@ -127,6 +151,7 @@ function applyHook(s, ev, extra = {}) {
       const fp = ev.tool_input && (ev.tool_input.file_path || ev.tool_input.notebook_path);
       if (fp && (kind === 'edit' || kind === 'read')) touchFile(s, fp, kind);
       pushEvent(s, name === 'PostToolUseFailure' ? 'fail' : kind, label);
+      noteToolResult(s, label, name === 'PostToolUseFailure');
       if (s.status === 'waiting' || s.status === 'starting') setStatus(s, 'working');
       s.activity = (name === 'PostToolUseFailure' ? '✕ ' : '✓ ') + label;
       break;
@@ -136,6 +161,7 @@ function applyHook(s, ev, extra = {}) {
       const label = describeTool(ev.tool_name, ev.tool_input);
       setStatus(s, 'waiting', `Permission: ${label}`);
       pushEvent(s, 'ask', `Permission: ${label}`);
+      s.pending = { tool: ev.tool_name || '', label, detail: permissionDetail(ev.tool_name, ev.tool_input).slice(0, 600), t: Date.now() };
       break;
     }
 
@@ -145,6 +171,7 @@ function applyHook(s, ev, extra = {}) {
       if (type === 'permission' || type === 'permission_prompt' || type === 'input' || type === 'agent_needs_input') {
         setStatus(s, 'waiting', msg || 'Needs your input');
         pushEvent(s, 'ask', msg || 'Needs input');
+        if ((type === 'permission' || type === 'permission_prompt') && !s.pending) s.pending = { tool: '', label: msg || 'Permission', detail: '', t: Date.now() };
       } else if (type === 'idle' || type === 'idle_prompt') {
         if (s.status !== 'waiting') setStatus(s, 'done', msg || 'Waiting for your next prompt');
       }
@@ -182,6 +209,7 @@ function applyHook(s, ev, extra = {}) {
     default:
       break;
   }
+  if (s.status !== 'waiting') s.pending = null;
   return { prev, next: s.status };
 }
 

@@ -3,7 +3,7 @@
 // Claude Code, windows, notifications, the dock badge, the optional voice, settings,
 // and saving/restoring sessions across restarts.
 
-const { app, BrowserWindow, ipcMain, dialog, Menu, Notification, shell, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Notification, shell, clipboard, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -15,6 +15,8 @@ const { createSession, applyHook, snapshot, setStatus, pushEvent } = require('./
 const { startHookServer, writeSettingsFile } = require('./src/hooks');
 const { repoInfo, createWorktree, currentBranch } = require('./src/git');
 const { readContextUsage } = require('./src/transcript');
+const { readUsage } = require('./src/usage');
+const ICON = path.join(__dirname, 'assets', 'icon.png');
 
 app.setName('Tmax');
 // Tests and probes run against a throwaway profile so they never touch your saved sessions.
@@ -50,6 +52,7 @@ const DEFAULT_SETTINGS = {
   scrollback: 20000, copyOnSelect: false, bell: 'visual',
   editor: 'auto',               // auto | system | vscode | cursor | zed
   restore: true,                // reopen sessions (and resume Claude) after a restart
+  glass: 'medium',              // see-through window: off | subtle | medium | strong
 };
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 let settings = { ...DEFAULT_SETTINGS };
@@ -155,16 +158,47 @@ function scheduleContextRead(entry) {
   if (entry.ctxTimer) return;
   entry.ctxTimer = setTimeout(() => {
     entry.ctxTimer = null;
-    const usage = readContextUsage(entry.state.transcriptPath);
-    if (usage) { entry.state.context = usage; broadcast(entry.state.id); }
+    refreshUsage(entry, true);
   }, 600);
+}
+
+// Context gauge + token/cost meter, both read from Claude's transcript.
+function refreshUsage(entry, push) {
+  const st = entry.state;
+  if (!st.transcriptPath && st.claudeSessionId) st.transcriptPath = findTranscript(st.claudeSessionId);
+  if (!st.transcriptPath) return;
+  let changed = false;
+  const ctx = readContextUsage(st.transcriptPath);
+  if (ctx && (!st.context || ctx.used !== st.context.used)) { st.context = ctx; changed = true; }
+  entry.meter = entry.meter || {};
+  if (readUsage(entry.meter, st.transcriptPath)) { st.usage = entry.meter.usage; changed = true; }
+  if (changed && push) broadcast(st.id);
+}
+
+// Claude keeps each conversation at ~/.claude/projects/<folder>/<session id>.jsonl
+function findTranscript(claudeId) {
+  const base = path.join(os.homedir(), '.claude', 'projects');
+  try {
+    for (const d of fs.readdirSync(base)) {
+      const f = path.join(base, d, `${claudeId}.jsonl`);
+      if (fs.existsSync(f)) return f;
+    }
+  } catch { /* no projects yet */ }
+  return null;
 }
 
 function handleHook(id, payload, extra) {
   const entry = sessions.get(id);
   if (!entry) return;
+  const wasStuck = entry.state.stuck;
   const { prev, next } = applyHook(entry.state, payload, extra);
   const ev = payload.hook_event_name || extra.e;
+  if (entry.state.stuck && !wasStuck) {
+    const s = entry.state;
+    const w = windowFor(entry.winId);
+    if (!(w && w.isFocused())) notify(entry, `${s.name} may be stuck`, s.stuck);
+    speak(`${s.name} may be stuck.`, [...sessions.keys()].indexOf(s.id));
+  }
   if (ev === 'PostToolUse' || ev === 'Stop' || ev === 'UserPromptSubmit' || ev === 'SubagentStop') {
     scheduleContextRead(entry);
   }
@@ -209,6 +243,10 @@ function attachPty(entry, args, cwd, cols, rows) {
   entry.early = '';            // output produced before the window has picked this session up
   entry.claimed = false;
   p.onData((data) => {
+    if (entry.state.kind === 'agent' && !entry.state.loginNeeded && /Login expired|Please run \/login|Invalid API key|OAuth token has expired/.test(data)) {
+      entry.state.loginNeeded = true;
+      setTimeout(() => broadcast(id), 0);
+    }
     if (!entry.claimed) { entry.early = (entry.early + data).slice(-400000); return; }
     entry.buf += data;
     if (!entry.flushTimer) {
@@ -268,11 +306,19 @@ async function createAgentSession(opts, winId = win && win.id) {
   // make bypass reachable with Shift+Tab inside every session (it is not switched on unless chosen)
   if (process.env.TMAX_NO_BYPASS !== '1' && process.env.SWITCHBOARD_NO_BYPASS !== '1') cmd += ' --allow-dangerously-skip-permissions';
   if (permissionMode && permissionMode !== 'default') cmd += ` --permission-mode ${shq(permissionMode)}`;
-  if (resume) cmd += ` --resume ${shq(resume)}`;
-  else if (prompt && prompt.trim()) cmd += ` ${shq(prompt.trim())}`;
+  // Choose Claude's conversation id ourselves so the session can always be resumed after a restart,
+  // even if you quit before sending a prompt.
+  state.claudeSessionId = resume || crypto.randomUUID();
+  // A conversation only exists once something was sent; a session you never prompted
+  // can't be resumed, so start it fresh under the same id instead.
+  const canResume = resume && findTranscript(resume);
+  if (canResume) cmd += ` --resume ${shq(resume)}`;
+  else cmd += ` --session-id ${shq(state.claudeSessionId)}`;
+  if (!canResume && prompt && prompt.trim()) cmd += ` ${shq(prompt.trim())}`;
   const full = `${cmd}; echo; printf '\\033[2m[claude exited — this is now a plain shell]\\033[0m\\n'; exec "$SHELL" -l`;
 
   attachPty(entry, ['-l', '-i', '-c', full], workDir, opts.cols, opts.rows);
+  if (canResume) setTimeout(() => refreshUsage(entry, true), 1500);
   pushEvent(state, 'user', resume ? 'Resumed after restart' : wt ? `Worktree ${branch}` : `Started in ${path.basename(workDir)}`);
   return snapshot(state);
 }
@@ -544,6 +590,32 @@ ipcMain.on('session:attention', (_e, id, kind) => {
   broadcast(id);
 });
 ipcMain.handle('session:reveal', (_e, id) => { const s = sessions.get(id); if (s) shell.openPath(s.state.cwdNow || s.state.cwd); });
+// Answer Claude's permission prompt without opening the tab. Enter picks the highlighted
+// "Yes"; Esc is "No, tell Claude what to do differently". Only sent while a prompt is up.
+ipcMain.handle('session:answer', (_e, id, action) => {
+  const entry = sessions.get(id);
+  if (!entry || !entry.pty || entry.dead) return false;
+  const st = entry.state;
+  if (st.status !== 'waiting' || !st.pending) return false;
+  entry.pty.write(action === 'allow' ? '\r' : '\x1b');
+  st.pending = null;
+  setStatus(st, 'working', action === 'allow' ? `✓ Allowed: ${st.activity.replace(/^Permission: /, '')}` : 'Denied — tell Claude what to do instead');
+  pushEvent(st, action === 'allow' ? 'user' : 'fail', action === 'allow' ? 'You allowed it' : 'You denied it');
+  broadcast(id);
+  updateBadge();
+  return true;
+});
+
+// Type a message into Claude's prompt and send it (bracketed paste keeps newlines intact).
+ipcMain.handle('session:reply', (_e, id, text) => {
+  const entry = sessions.get(id);
+  text = String(text || '').trim();
+  if (!entry || !entry.pty || entry.dead || !text) return false;
+  entry.pty.write(text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text);
+  setTimeout(() => { try { entry.pty.write('\r'); } catch { /* gone */ } }, 120);
+  return true;
+});
+
 ipcMain.handle('session:rename', (_e, id, name) => {
   const s = sessions.get(id);
   if (s && name && name.trim()) { s.state.name = name.trim().slice(0, 60); broadcast(id); }
@@ -669,8 +741,10 @@ function createWindow(bounds) {
   const w = new BrowserWindow({
     width: 1440, height: 920, minWidth: 900, minHeight: 560,
     ...(bounds && bounds.width ? bounds : {}),
-    backgroundColor: '#0B0C0E',
+    // frosted glass: macOS blurs whatever is behind the window; the page decides how much shows through
+    ...(process.platform === 'darwin' ? { vibrancy: 'under-window', visualEffectState: 'active', backgroundColor: '#00000000' } : { backgroundColor: '#07080D' }),
     title: 'Tmax',
+    icon: ICON,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
@@ -706,11 +780,15 @@ function createWindow(bounds) {
 
 app.whenReady().then(async () => {
   loadSettings();
+  // Tmax is a dark app: keep macOS's glass material dark even when the system is in light mode
+  nativeTheme.themeSource = 'dark';
+  if (process.platform === 'darwin' && app.dock && fs.existsSync(ICON)) try { app.dock.setIcon(ICON); } catch { /* ignore */ }
   hook = await startHookServer(handleHook);
   buildMenu();
   const restored = await restoreState();
   if (!restored) createWindow();
   startedUp = true;
+  if (process.env.SB_USER_DATA && process.env.SB_PROBE) global.__tmax = { handleHook, sessions };
   if (process.env.SB_SMOKE) require('./test/smoke-electron')({ app, win, createAgentSession, handleHook, send });
   setInterval(pollTerminals, 1500);
   if (PERSIST) setInterval(saveState, 20000);

@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('sb', {
   kill: (id) => ipcRenderer.invoke('session:kill', id),
   reveal: (id) => ipcRenderer.invoke('session:reveal', id),
   rename: (id, name) => ipcRenderer.invoke('session:rename', id, name),
+  answer: (id, action) => ipcRenderer.invoke('session:answer', id, action),
+  reply: (id, text) => ipcRenderer.invoke('session:reply', id, text),
   setVisible: (ids, activeId) => ipcRenderer.send('view:visible', ids, activeId),
   attention: (id, kind) => ipcRenderer.send('session:attention', id, kind),
   gitInfo: (cwd) => ipcRenderer.invoke('git:info', cwd),

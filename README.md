@@ -24,6 +24,10 @@ You need `claude` on your PATH. To use a different binary, run `TMAX_CLAUDE=/pat
 - **Safety border.** The window frame turns teal, amber or red with the active session's permission mode.
 - **Inspector.** Shows the context-window gauge (read from the session transcript), tool and subagent counts, files read and written, and Claude's last reply.
 - **Timeline strip.** Every tool call appears as a colour-coded tick.
+- **Answer without switching.** When an agent asks permission, its command shows in the sidebar, the inspector and Mission Control with **Allow** / **Deny** buttons (they press Enter / Esc in Claude's prompt for you). The inspector's reply box sends a message to the agent, or queues one while it's working.
+- **Tokens and cost.** Each session's tokens (input, output, cache) and an estimated cost, read from its transcript, plus a "today" total in the title bar. Cost uses Anthropic API list prices; on a Claude plan it's the value used, not a bill.
+- **Early warnings.** Context over 80% offers a one-click `/compact`. An agent failing three times in a row, or repeating the same step five times, is flagged "stuck?" with an Interrupt button. "Login expired" in Claude's output shows a **Sign in** button.
+- **Always resumable.** New agents get their Claude conversation id up front (`--session-id`), so they resume after a restart even if you quit before sending a prompt.
 - **Spoken alerts** (speaker button). For now this uses macOS `say` with a different voice per agent. Kokoro is the planned engine.
 
 ## Shortcuts
@@ -68,4 +72,4 @@ test/              npm test, plus a headless screenshot smoke test
 
 ## Not built yet
 
-Rewind/fork from the timeline, best-of-N compare, a permission inbox you can answer from inside the app, inline diff review, and Kokoro voice with spoken commands.
+Sessions that survive quitting (tmux-backed), rewind/fork from the timeline, best-of-N compare, inline diff review, and Kokoro voice with spoken commands.
