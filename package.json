@@ -1,12 +1,14 @@
 {
-  "name": "switchboard",
-  "productName": "Switchboard",
+  "name": "tmax",
+  "productName": "Tmax",
   "version": "0.1.0",
   "description": "An agent-native terminal for Claude Code.",
   "main": "main.js",
   "private": true,
   "scripts": {
     "start": "electron .",
+    "prestart": "node scripts/brand-electron.js",
+    "postinstall": "node scripts/brand-electron.js",
     "test": "node test/state.test.js && node test/hooks.test.js",
     "rebuild": "electron-rebuild -f -w node-pty"
   },

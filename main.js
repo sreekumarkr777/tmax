@@ -1,4 +1,4 @@
-// Switchboard — main process.
+// Tmax (TokenMax) — main process.
 // Owns the PTYs (agent sessions and plain shells), the hook server that hears from
 // Claude Code, windows, notifications, the dock badge, the optional voice, settings,
 // and saving/restoring sessions across restarts.
@@ -16,9 +16,24 @@ const { startHookServer, writeSettingsFile } = require('./src/hooks');
 const { repoInfo, createWorktree, currentBranch } = require('./src/git');
 const { readContextUsage } = require('./src/transcript');
 
-app.setName('Switchboard');
+app.setName('Tmax');
 // Tests and probes run against a throwaway profile so they never touch your saved sessions.
 if (process.env.SB_USER_DATA) app.setPath('userData', process.env.SB_USER_DATA);
+else migrateOldProfile();
+
+// The app used to be called Switchboard. Bring its saved sessions and settings across once.
+function migrateOldProfile() {
+  try {
+    const dir = app.getPath('userData');
+    const old = path.join(app.getPath('appData'), 'Switchboard');
+    if (!fs.existsSync(old)) return;
+    fs.mkdirSync(dir, { recursive: true });
+    for (const f of ['sessions.json', 'settings.json']) {
+      const from = path.join(old, f), to = path.join(dir, f);
+      if (fs.existsSync(from) && !fs.existsSync(to)) fs.copyFileSync(from, to);
+    }
+  } catch {}
+}
 const PERSIST = !process.env.SB_SMOKE && process.env.SB_NO_PERSIST !== '1';
 
 let win = null;                // most recently created window (the smoke test uses it)
@@ -165,7 +180,7 @@ function handleHook(id, payload, extra) {
 function cleanEnv(src) {
   const env = { ...src };
   delete env.ELECTRON_RUN_AS_NODE;
-  // If Switchboard itself was started from inside a Claude Code session, don't let that
+  // If Tmax itself was started from inside a Claude Code session, don't let that
   // session's markers leak in: they make every agent a "child session" (no transcript, etc.).
   for (const k of Object.keys(env)) {
     if (k === 'CLAUDECODE' || k === 'CLAUDE_PID' || k === 'CLAUDE_EFFORT' ||
@@ -186,7 +201,7 @@ function cleanEnv(src) {
 function attachPty(entry, args, cwd, cols, rows) {
   const id = entry.state.id;
   const userShell = process.env.SHELL || '/bin/zsh';
-  const env = { ...cleanEnv(process.env), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Switchboard', SWITCHBOARD_SESSION: id };
+  const env = { ...cleanEnv(process.env), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Tmax', TMAX_SESSION: id };
   const p = pty.spawn(userShell, args, { name: 'xterm-256color', cols: cols || 100, rows: rows || 30, cwd, env });
   entry.pty = p;
   entry.tty = String(p._pty || '').replace('/dev/', '');
@@ -248,10 +263,10 @@ async function createAgentSession(opts, winId = win && win.id) {
     port: hook.port, sessionId: id, token: hook.token,
   });
 
-  const claudeBin = process.env.SWITCHBOARD_CLAUDE || 'claude';
+  const claudeBin = process.env.TMAX_CLAUDE || process.env.SWITCHBOARD_CLAUDE || 'claude';
   let cmd = `${claudeBin} --settings ${shq(entry.settingsFile)}`;
   // make bypass reachable with Shift+Tab inside every session (it is not switched on unless chosen)
-  if (process.env.SWITCHBOARD_NO_BYPASS !== '1') cmd += ' --allow-dangerously-skip-permissions';
+  if (process.env.TMAX_NO_BYPASS !== '1' && process.env.SWITCHBOARD_NO_BYPASS !== '1') cmd += ' --allow-dangerously-skip-permissions';
   if (permissionMode && permissionMode !== 'default') cmd += ` --permission-mode ${shq(permissionMode)}`;
   if (resume) cmd += ` --resume ${shq(resume)}`;
   else if (prompt && prompt.trim()) cmd += ` ${shq(prompt.trim())}`;
@@ -655,7 +670,7 @@ function createWindow(bounds) {
     width: 1440, height: 920, minWidth: 900, minHeight: 560,
     ...(bounds && bounds.width ? bounds : {}),
     backgroundColor: '#0B0C0E',
-    title: 'Switchboard',
+    title: 'Tmax',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {

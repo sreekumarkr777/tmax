@@ -1,4 +1,4 @@
-/* Switchboard renderer. Plain JS, no build step. */
+/* Tmax renderer. Plain JS, no build step. */
 (() => {
   const sb = window.sb;
   const $ = (sel) => document.querySelector(sel);
@@ -375,7 +375,7 @@
     const all = state.order.map((id) => state.sessions.get(id)).filter(Boolean);
     const cols = collisions();
 
-    document.title = active ? `${active.name} — Switchboard` : 'Switchboard';
+    document.title = active ? `${active.name} — Tmax` : 'Tmax';
 
     // safety frame follows the active session's permission mode (plain shells have none)
     const mode = active && !isPlain(active) ? active.permissionMode : 'default';

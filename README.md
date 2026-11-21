@@ -1,4 +1,6 @@
-# Switchboard (working name)
+# Tmax
+
+*Tmax = TokenMax.*
 
 An agent-native terminal for Claude Code. Every tab is an agent session, optionally in its own git worktree, and the app always knows what each agent is doing.
 
@@ -10,7 +12,7 @@ npm install      # node-pty ships a macOS prebuild; no compiler needed
 npm start
 ```
 
-You need `claude` on your PATH. To use a different binary, run `SWITCHBOARD_CLAUDE=/path/to/claude npm start`.
+You need `claude` on your PATH. To use a different binary, run `TMAX_CLAUDE=/path/to/claude npm start`.
 
 ## What v0.1 does
 

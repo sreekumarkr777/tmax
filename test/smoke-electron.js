@@ -1,4 +1,4 @@
-// Visual smoke test: SB_SMOKE=1 SWITCHBOARD_CLAUDE=test/fake-claude.sh electron .
+// Visual smoke test: SB_SMOKE=1 TMAX_CLAUDE=test/fake-claude.sh electron .
 // Creates three sessions, replays realistic hook events, saves screenshots, quits.
 const fs = require('fs');
 const path = require('path');
