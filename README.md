@@ -20,6 +20,8 @@
   <img src="site/img/session.jpg" alt="Tmax running three Claude Code agents: one working, one asking permission, one finished" width="900">
 </p>
 
+<p align="center"><sub>The real Tmax interface, shown with demo sessions and sample token numbers.</sub></p>
+
 *Tmax = TokenMax.* Every tab is an agent session, optionally in its own git worktree, and the app always knows what each agent is doing.
 
 > Tmax is an independent open-source project. It isn't affiliated with or endorsed by Anthropic.

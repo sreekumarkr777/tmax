@@ -72,6 +72,11 @@
   .btn.primary { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset, 0 12px 40px rgba(124,92,255,.4); }
   .btn.primary:hover { box-shadow: 0 0 0 1px rgba(255,255,255,.15) inset, 0 16px 50px rgba(124,92,255,.6); }
 
+  /* the real app, cropped */
+  .real { margin: 0; border: 1px solid var(--line-2); padding: 8px; background: rgba(10,11,18,.85); box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(124,92,255,.12); }
+  .real img { width: 100%; }
+  .real figcaption, .shot-cap { margin-top: 10px; font: 400 11.5px/1.5 var(--mono); color: var(--dim); }
+  /* (old mock styles below are unused) */
   /* live terminal mock */
   .term { border: 1px solid var(--line-2); background: rgba(10,11,18,.88); box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(139,92,246,.08), 0 0 60px rgba(124,92,255,.12); font: 400 13.5px/1.75 var(--mono); position: relative; overflow: hidden; }
   .term::after { /* scanlines */ content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(rgba(255,255,255,.018) 0 1px, transparent 1px 3px); }
@@ -224,16 +229,10 @@
           <a class="btn" href="https://github.com/sreekumarkr777/tmax">View source</a>
         </div>
       </div>
-      <div class="term rv d3" aria-label="Example: three agents in Tmax">
-        <div class="term-top"><b></b><b></b><b></b><span>tmax — 3 agents</span><em id="waitcount">1 waiting</em></div>
-        <div class="term-body">
-          <div class="row work"><i class="sq"></i><span class="nm">auth-refactor</span><span class="ac" id="a1">$ npm test -- auth</span><span class="tk">2.4M</span></div>
-          <div class="row wait" id="r2"><i class="sq"></i><span class="nm">api-tests</span><span class="ac">wants to run a command</span><span class="tk">610k</span></div>
-          <div class="ask" id="ask"><code>$ rm -rf test/fixtures/tmp</code><span class="b y" id="allow">Allow</span><span class="b n">Deny</span></div>
-          <div class="row done"><i class="sq"></i><span class="nm">docs-pass</span><span class="ac">✓ Updated 14 API pages</span><span class="tk">5.1M</span></div>
-          <div class="typed"><span class="p">❯ </span><span id="typed"></span><span class="c"></span></div>
-        </div>
-      </div>
+      <figure class="real rv d3">
+        <img src="img/hero-crop.jpg" alt="The real Tmax window: three agent sessions in the sidebar, one asking to run a command with Allow and Deny buttons" width="1400" height="960">
+        <figcaption>The real Tmax window. Demo sessions and sample token numbers.</figcaption>
+      </figure>
     </div>
   </div>
 
@@ -291,6 +290,7 @@
       <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
       <img src="img/session.jpg" alt="Tmax with three agent sessions: one working, one asking permission, one finished" width="2400" height="1533" loading="lazy">
     </figure>
+    <p class="shot-cap">Real Tmax interface, shown with demo sessions and sample token numbers.</p>
   </section>
 
   <section id="install" class="wrap">
@@ -344,30 +344,6 @@
   document.querySelectorAll('.cell').forEach((c) => c.addEventListener('pointermove', (e) => {
     const r = c.getBoundingClientRect(); c.style.setProperty('--mx', e.clientX - r.left + 'px'); c.style.setProperty('--my', e.clientY - r.top + 'px');
   }));
-  // the mock terminal plays a small loop: an agent asks, you allow, it goes back to work
-  const lines = ['fix the flaky login test', 'add rate limiting to /api', 'why is the build slow?', 'review the auth changes'];
-  const typed = document.getElementById('typed');
-  const acts = ['$ npm test -- auth', '✓ Edit src/auth/cookies.ts', 'Read src/auth/session.ts', '$ npm test', '↳ subagent: find call sites'];
-  const a1 = document.getElementById('a1'), r2 = document.getElementById('r2'), ask = document.getElementById('ask'), allow = document.getElementById('allow'), wc = document.getElementById('waitcount');
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  async function play() {
-    let i = 0, j = 0;
-    for (;;) {
-      const text = lines[i++ % lines.length];
-      for (const ch of text) { typed.textContent += ch; await sleep(55 + Math.random() * 60); }
-      await sleep(1400);
-      typed.textContent = '';
-      a1.textContent = acts[j++ % acts.length];
-      if (i % 2 === 0) {
-        allow.classList.add('press'); await sleep(450); allow.classList.remove('press');
-        ask.style.display = 'none'; r2.className = 'row work'; r2.querySelector('.ac').textContent = '$ rm -rf test/fixtures/tmp'; wc.textContent = 'all clear'; wc.style.color = '#34D399';
-        await sleep(2600);
-        ask.style.display = ''; r2.className = 'row wait'; r2.querySelector('.ac').textContent = 'wants to run a command'; wc.textContent = '1 waiting'; wc.style.color = '';
-      }
-      await sleep(500);
-    }
-  }
-  if (!still) play(); else typed.textContent = lines[0];
   document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); } catch {}
   }));
